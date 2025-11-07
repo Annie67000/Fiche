@@ -124,10 +124,10 @@ def delete_employe(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# ===================================================================
-# ======================= CRUD FICHE DE PAIE ========================
-# ===================================================================
 
+# ======================= CRUD FICHE DE PAIE ========================
+# Vues optimisées avec select_related('employe') pour joindre les tables en une requête SQL.
+# Gestion des fichiers PDF via champ FileField dans le modèle.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def list_fiches_paie(request):
