@@ -13,8 +13,8 @@ class Employe(models.Model):
 
     class Meta:
         db_table = 'employe'
-        verbose_name = "Employé"
-        verbose_name_plural = "Employés"
+        verbose_name = "Employe"
+        verbose_name_plural = "Employes"
 
     def __str__(self):
         return f"{self.prenom} {self.nom} ({self.matricule})"
@@ -25,7 +25,7 @@ class FichePaie(models.Model):
         Employe, on_delete=models.CASCADE, related_name='fiches_paie'
     )
     mois = models.CharField(max_length=20)
-    fichier_pdf = models.CharField(max_length=255)
+    fichier_pdf = models.FileField(max_length=255)
     date_import = models.DateTimeField(default=timezone.now)
     envoyee = models.BooleanField(default=False)
 

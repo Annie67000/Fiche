@@ -1,0 +1,13 @@
+### CRÉER UN EMPLOYÉ
+POST http://127.0.0.1:8000/api/v1/employe/create/
+Content-Type: application/json
+
+{
+  "matricule": "EMP001",
+  "nom": "Rakoto",
+  "prenom": "Jean",
+  "email": "jean.rakoto@test.com",
+  "departement": "IT",
+  "poste": "Développeur",
+  "actif": true
+}
