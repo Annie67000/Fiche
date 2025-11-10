@@ -1,10 +1,13 @@
 # Create your views here.
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Employe, FichePaie  # Assure-toi que le modèle existe
 from .serializers import EmployeSerializer, FichePaieSerializer # Tu dois créer ce serializer
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 # Création d'un API avec méthode GET et 'AllowAny' pour la permission (Permettre tout)
 @api_view(['GET'])

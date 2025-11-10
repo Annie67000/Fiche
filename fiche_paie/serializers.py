@@ -18,5 +18,5 @@ class FichePaieSerializer(serializers.ModelSerializer):
         fields = '__all__'
     
 # MÉTHODE OBLIGATOIRE POUR SerializerMethodField
-    def get_employe_info(self, obj):
+    def get_employe_info(self, obj): 
         return f"{obj.employe.prenom} {obj.employe.nom} ({obj.employe.matricule})"

@@ -1,10 +1,17 @@
 # fiche_paie/urls.py
 from django.urls import path
 from . import views
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+
+from . import logout_views
 
 urlpatterns = [
     # --- TEST ---
     path('test/', views.test_fiche_paie, name='test_fiche_paie'),
+
 
     # --- EMPLOYÉ : CRUD ---
     path('employe/create/', views.create_employe, name='create_employe'), # Créer un employé
@@ -19,4 +26,10 @@ urlpatterns = [
     path('fiche-paie/<int:pk>/', views.retrieve_fiche_paie, name='retrieve_fiche_paie'), # Détail d’une fiche (inclut URL PDF)
     path('fiche-paie/<int:pk>/update/', views.update_fiche_paie, name='update_fiche_paie'), # Modifier une fiche (PDF optionnel)
     path('fiche-paie/<int:pk>/delete/', views.delete_fiche_paie, name='delete_fiche_paie'), # Supprimer une fiche + fichier PDF
+]
+    #Nouveau
+urlpatterns += [
+    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('logout/', logout_views.logout_view, name='logout'),
+    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
