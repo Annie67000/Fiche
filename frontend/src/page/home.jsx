@@ -1,7 +1,9 @@
 import { Card, Text, Group, SimpleGrid, Title, Container, Input, ActionIcon, Box } from "@mantine/core";
 import { IconUserPlus, IconFileImport, IconCheck, IconX, IconSearch } from "@tabler/icons-react";
-import { LineChart } from "@mantine/charts";
+import LineChart from "../components/chart/line-chart";
 import { RingProgress } from "@mantine/core";
+import { data } from "./data";
+import DoughnutChart from "../components/chart/doughnut-chart";
 
 export default function Home() {
   return (
@@ -100,56 +102,34 @@ export default function Home() {
       </SimpleGrid>
 
       {/* GRAPHIQUES */}
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" justify="center">
+
         {/* Graphique en ligne */}
-        <Card shadow="sm" padding="xl" radius="lg" withBorder bg="white">
-          <Text size="lg" fw={600} mb="lg">
+        <Card shadow="sm" padding="xl" radius="lg" withBorder bg="white" h="auto">
+          <p className="text-xl font-semibold mb-6" style={{ color: "#1a1b1e" }}>
             Transactions par jour
-          </Text>
-          <LineChart
-            h={360}
-            data={[
-              { date: "01", transactions: 60 },
-              { date: "02", transactions: 80 },
-              { date: "03", transactions: 100 },
-              { date: "04", transactions: 70 },
-              { date: "05", transactions: 120 },
-              { date: "06", transactions: 160 },
-              { date: "07", transactions: 200 },
-            ]}
-            dataKey="date"
-            series={[{ name: "transactions", color: "#7950f2" }]}
-            curveType="monotone"
-            withXAxis
-            withYAxis
-            gridAxis="both"
-            tickLine="none"
-            withTooltip
-          />
+          </p>
+
+          <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+            <div style={{ width: 400, height: 300 }}>
+              <LineChart />
+            </div>
+          </div>
         </Card>
 
-        {/* Donut / RingProgress */}
+        {/* Donut */}
         <Card shadow="sm" padding="xl" radius="lg" withBorder bg="white" ta="center">
           <Text size="lg" fw={600} mb="xl">
             Statut des envois (%)
           </Text>
-          <RingProgress
-            size={240}
-            thickness={28}
-            roundCaps
-            sections={[
-              { value: 70, color: "#51cf66" },  // Envoyé
-              { value: 20, color: "#339af0" },  // En attente
-              { value: 10, color: "#ff6b6b" },  // Échec
-            ]}
-            label={
-              <Text size="xl" fw={800} c="#1a1b1e">
-                100%
-              </Text>
-            }
-          />
 
-          {/* Légende manuelle (plus propre que celle auto) */}
+          <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+            <div style={{ width: 400, height: 300 }}>
+              <DoughnutChart />
+            </div>
+          </div>
+
+          {/* Légendes */}
           <Group justify="center" mt={30} gap="xl">
             <Group gap="xs">
               <Box w={12} h={12} bg="#51cf66" style={{ borderRadius: 6 }} />
@@ -165,7 +145,9 @@ export default function Home() {
             </Group>
           </Group>
         </Card>
+
       </SimpleGrid>
+
     </Container>
   );
 }
