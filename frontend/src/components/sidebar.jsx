@@ -53,17 +53,15 @@ export default function Sidebar() {
 
 
       {/* Déconnexion */}
-      <Box pos="" bottom={30} left={20} right={20}>
+      <Box>
         <Divider color="white" opacity={0.2} my="lg" />
-        <NavLink
-          label="Déconnexion"
-          leftSection={<IconLogout size={22} stroke={1.8} />}
-          color="white"
-          onClick={() => {
-            localStorage.removeItem("access_token");
-            window.location.href = "/login";
-          }}
-        />
+        <Link
+          to={'/login'}
+          className={`flex items-center gap-2 px-6 py-4 mb-1 rounded-md text-md text-white hover:bg-red-500 hover:bg-opacity-10`}
+        >
+          <IconLogout size={24} />
+          <span className=''>Déconnexion</span>
+        </Link>
       </Box>
     </Box>
   );
