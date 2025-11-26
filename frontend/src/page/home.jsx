@@ -18,7 +18,7 @@ export default function Home() {
           radius="lg"
           size="md"
           styles={{
-            input: { 
+            input: {
               border: "1px solid #e9ecef",
               '&:focus': { borderColor: "#7950f2" }
             }
@@ -30,70 +30,72 @@ export default function Home() {
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="lg" mb={50}>
         {/* Employés enregistrés */}
         <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
-          <Group justify="apart">
-            <Box>
-              <Text size="sm" c="dimmed" tt="uppercase" fw={500}>
-                Employés enregistrés
-              </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4}>
-                2
-              </Text>
-            </Box>
+          <div className="flex justify-around items-center gap-4">
             <ActionIcon size={56} radius="xl" color="#7950f2" variant="light">
               <IconUserPlus size={28} />
             </ActionIcon>
-          </Group>
+            <Box>
+              <Text size="md" c="dimmed" tt="uppercase" fw={500}>
+                Employés enregistrés
+              </Text>
+              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="right">
+                2
+              </Text>
+            </Box>
+          </div>
         </Card>
 
         {/* Fiches importées */}
         <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
-          <Group justify="apart">
-            <Box>
-              <Text size="sm" c="dimmed" tt="uppercase" fw={500}>
-                Fiches importées
-              </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4}>
-                2
-              </Text>
-            </Box>
+          <div className="flex justify-around items-center gap-4" >
+
             <ActionIcon size={56} radius="xl" color="#9775fa" variant="light">
               <IconFileImport size={28} />
             </ActionIcon>
-          </Group>
+            <Box>
+              <Text size="md" c="dimmed" tt="uppercase" fw={500}>
+                Fiches importées
+              </Text>
+              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="right">
+                2
+              </Text>
+            </Box>
+          </div>
         </Card>
 
         {/* Envois réussis */}
         <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
-          <Group justify="apart">
-            <Box>
-              <Text size="sm" c="dimmed" tt="uppercase" fw={500}>
-                Envois réussis
-              </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4}>
-                1
-              </Text>
-            </Box>
+          <div className="flex justify-around items-center gap-4" >
             <ActionIcon size={56} radius="xl" color="#51cf66" variant="light">
               <IconCheck size={28} />
             </ActionIcon>
-          </Group>
+            <Box>
+              <Text size="md" c="dimmed" tt="uppercase" fw={500}>
+                Envois réussis
+              </Text>
+              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="right">
+                1
+              </Text>
+            </Box>
+          </div>
+
         </Card>
 
         {/* Envois échoués */}
         <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
-          <Group justify="apart">
-            <Box>
-              <Text size="sm" c="dimmed" tt="uppercase" fw={500}>
-                Envois échoués
-              </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4}>
-                1
-              </Text>
-            </Box>
+          <div className="flex justify-around items-center gap-4" >
             <ActionIcon size={56} radius="xl" color="#ff6b6b" variant="light">
               <IconX size={28} />
             </ActionIcon>
-          </Group>
+            <Box>
+              <Text size="md" c="dimmed" tt="uppercase" fw={500}>
+                Envois échoués
+              </Text>
+              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="right">
+                129898
+              </Text>
+            </Box>
+          </div>
         </Card>
       </SimpleGrid>
 
