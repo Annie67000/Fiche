@@ -1,8 +1,6 @@
 import { Card, Text, Group, SimpleGrid, Title, Container, Input, ActionIcon, Box } from "@mantine/core";
 import { IconUserPlus, IconFileImport, IconCheck, IconX, IconSearch } from "@tabler/icons-react";
 import LineChart from "../components/chart/line-chart";
-import { RingProgress } from "@mantine/core";
-import { data } from "./data";
 import DoughnutChart from "../components/chart/doughnut-chart";
 
 export default function Home() {

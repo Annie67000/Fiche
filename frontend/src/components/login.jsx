@@ -81,7 +81,7 @@ function LoginPage() {
   // Styles pour les éléments du formulaire
   const styles = {
     background: {
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: '#fff',
       minHeight: '100vh',
       display: 'flex',
       justifyContent: 'center',
@@ -118,9 +118,9 @@ function LoginPage() {
   };
 
   return (
-    <div style={styles.background}>
+    <div className=' bg-gray-300 flex justify-center items-center min-h-screen'>
       <Paper withBorder shadow="md" radius="md" style={styles.paper}>
-        <div style={styles.avatar}>👤</div>
+        <div style={styles.avatar }>👤</div>
         <Title order={2} style={styles.title}>Connexion</Title>
         <form onSubmit={handleSubmit}>
           <TextInput
@@ -151,8 +151,8 @@ function LoginPage() {
             fullWidth
             type="submit"
             loading={isLoading}
+            className='bg-gray-300'
             style={{
-              backgroundColor: '#667eea',
               marginTop: '10px',
               height: '45px',
               fontWeight: '600',

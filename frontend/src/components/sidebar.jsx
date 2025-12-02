@@ -46,6 +46,7 @@ export default function Sidebar() {
                 <Icon size={24} />
                 <span className=''>{item.label}</span>
               </Link>
+
             );
           })}
         </Box>
