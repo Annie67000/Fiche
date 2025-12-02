@@ -14,6 +14,7 @@ import LoginPage from './components/login.jsx';
 import Sidebar from './components/sidebar.jsx';  // ← vérifie que ce chemin est bon
 import Home from './page/home.jsx';
 import Employes from './page/Employes.jsx';
+import { PaySlip } from './components/pay-slip.jsx';
 
 export default function App() {
   function PrivateRoute({ children }) {
@@ -53,7 +54,7 @@ export default function App() {
               </PrivateRoute>
             }
           />
-          {/* <Route path="/fiches" element={<PaySlip />} /> */}
+          <Route path="/fiches" element={<PaySlip />} />
         </Routes>
       </Router>
     </MantineProvider>

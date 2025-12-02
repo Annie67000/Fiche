@@ -4,48 +4,48 @@ import './pay-slip.css';
 export const PaySlip = () => {
     return (
 
-        <div class="payslip">
+        <div className="payslip">
 
-            <div class="header">
-                <div class="logo">
+            <div className="header">
+                <div className="logo">
                     <img src="images/logo.png.jpeg" alt="GULFSAT Madagascar" />
                 </div>
                 <h2>Bulletin de Paie</h2>
             </div>
 
-            <div class="grid-2">
+            <div className="grid-2">
                 <div>
-                    <div class="field"><label>Antananarivo</label></div>
-                    <div class="field">N° Stat : __________________</div>
-                    <div class="field">N° RC : _____________________</div>
+                    <div className="field"><label>Antananarivo</label></div>
+                    <div className="field">N° Stat : __________________</div>
+                    <div className="field">N° RC : _____________________</div>
                 </div>
 
                 <div>
-                    <div class="field">N° : ____________________</div>
-                    <div class="field">Mois : __________________</div>
-                    <div class="field">Période : _______ au _______</div>
-                    <div class="field">Payé le : _______________</div>
-                    <div class="field">Date de tirage : __________</div>
-                </div>
-            </div>
-
-            <div class="section-title">Informations Employé</div>
-
-            <div class="grid-2">
-                <div>
-                    <div class="field">Nom & Prénoms : ____________________________</div>
-                    <div class="field">Matricule : __________________________________</div>
-                    <div class="field">Poste : ______________________________________</div>
-                </div>
-
-                <div>
-                    <div class="field">Adresse : _____________________________________</div>
-                    <div class="field">Embauché le : ______________________________</div>
-                    <div class="field">CNaPS N° : _________________________________</div>
+                    <div className="field">N° : ____________________</div>
+                    <div className="field">Mois : __________________</div>
+                    <div className="field">Période : _______ au _______</div>
+                    <div className="field">Payé le : _______________</div>
+                    <div className="field">Date de tirage : __________</div>
                 </div>
             </div>
 
-            <div class="section-title">Détails de Paie</div>
+            <div className="section-title">Informations Employé</div>
+
+            <div className="grid-2">
+                <div>
+                    <div className="field">Nom & Prénoms : ____________________________</div>
+                    <div className="field">Matricule : __________________________________</div>
+                    <div className="field">Poste : ______________________________________</div>
+                </div>
+
+                <div>
+                    <div className="field">Adresse : _____________________________________</div>
+                    <div className="field">Embauché le : ______________________________</div>
+                    <div className="field">CNaPS N° : _________________________________</div>
+                </div>
+            </div>
+
+            <div className="section-title">Détails de Paie</div>
 
             <table>
                 <tr>
@@ -104,11 +104,11 @@ export const PaySlip = () => {
                 </tr>
             </table>
 
-            <div class="net">
+            <div className="net">
                 Net à payer : ______ Ariary
             </div>
 
-            <div class="footer-msg">
+            <div className="footer-msg">
                 Conservez ce bulletin pour faire valoir vos droits.
             </div>
         </div>
