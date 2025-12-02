@@ -186,7 +186,8 @@ export default function Employes() {
             data={[{ value: '2025-12', label: 'Décembre 2025' }]}
           /> */}
 
-          <MonthPickerInput />
+          <MonthPickerInput label="Mois" icon={<IconCalendar />}
+      placeholder="Sélectionner le mois" />
         </Group>
       </Card>
 
