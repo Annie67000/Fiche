@@ -1,28 +1,28 @@
 import { useState } from 'react';
-
-
-
-
+import axios from 'axios';
+import dayjs from 'dayjs';
 
 import {
   Card, Title, Text, Badge, Table, TextInput, Select,
-  Button, Group, ActionIcon, Avatar, Tooltip, Modal, Progress
+  Button, Group, ActionIcon, Avatar, Tooltip, Modal, Progress, FileInput
 } from '@mantine/core';
 
-
-import { DatePicker, MonthPickerInput  } from '@mantine/dates';
+import { DatePicker, MonthPickerInput } from '@mantine/dates';
 
 import { notifications } from '@mantine/notifications';
 import {
   IconSearch, IconCalendar, IconMail, IconDownload,
-  IconCheck, IconX, IconClock, IconSend
+  IconCheck, IconX, IconClock, IconSend, IconUpload
 } from '@tabler/icons-react';
-
 
 export default function Employes() {
   const [search, setSearch] = useState('');
   const [opened, setOpened] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [file, setFile] = useState(null);
+  const [selectedEmploye, setSelectedEmploye] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
 
   const employees = [
     { id: 1, matricule: 'EMP001', prenom: 'Aminata',  nom: 'Diop',     email: 'aminata@entreprise.sn',   statut: 'envoyee', lastSent: '28/11/2025' },
@@ -139,6 +139,54 @@ export default function Employes() {
     }, 400);
   };
 
+  const handleUpload = async () => {
+    if (!file || !selectedEmploye || !selectedMonth) {
+      notifications.show({
+        title: 'Information manquante',
+        message: 'Merci de sélectionner un employé, un mois et un fichier PDF.',
+        color: 'red',
+        icon: <IconX />,
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      const formData = new FormData();
+      formData.append('employe', selectedEmploye);
+      formData.append('mois', dayjs(selectedMonth).format('YYYY-MM'));
+      formData.append('fichier_pdf', file);
+
+      await axios.post('http://localhost:8000/api/v1/fiche-paie/create/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      notifications.show({
+        title: 'Fiche importée',
+        message: 'La fiche de paie a été enregistrée dans le dossier media.',
+        color: 'green',
+        icon: <IconCheck />,
+      });
+
+      setFile(null);
+      setSelectedEmploye(null);
+      setSelectedMonth(null);
+    } catch (error) {
+      console.error(error);
+      notifications.show({
+        title: "Erreur lors de l'import",
+        message: "Impossible d'enregistrer le fichier. Vérifiez le serveur backend.",
+        color: 'red',
+        icon: <IconX />,
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <>
       <Group position="apart" mb={50}>
@@ -186,9 +234,69 @@ export default function Employes() {
             data={[{ value: '2025-12', label: 'Décembre 2025' }]}
           /> */}
 
-          <MonthPickerInput label="Mois" icon={<IconCalendar />}
-      placeholder="Sélectionner le mois" />
+          <MonthPickerInput
+            label="Mois"
+            icon={<IconCalendar />}
+            placeholder="Sélectionner le mois"
+          />
         </Group>
+      </Card>
+
+      <Card
+        withBorder
+        radius="lg"
+        p="lg"
+        mb={40}
+        className="border-dashed border-gray-300 bg-gray-50"
+      >
+        <Title order={4} className="mb-4 font-semibold text-gray-800">
+          Importer une fiche de paie (PDF)
+        </Title>
+
+        <div className="flex flex-col gap-4 md:flex-row">
+          <Select
+            label="Employé"
+            placeholder="Sélectionner un employé"
+            value={selectedEmploye}
+            onChange={setSelectedEmploye}
+            data={employees.map((e) => ({
+              value: String(e.id),
+              label: `${e.prenom} ${e.nom} (${e.matricule})`,
+            }))}
+            className="flex-1"
+          />
+
+          <MonthPickerInput
+            label="Mois de la fiche"
+            placeholder="Sélectionner le mois"
+            icon={<IconCalendar />}
+            value={selectedMonth}
+            onChange={setSelectedMonth}
+            className="flex-1"
+          />
+        </div>
+
+        <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end">
+          <FileInput
+            label="Fichier PDF"
+            placeholder="Choisir un fichier"
+            icon={<IconUpload size={16} />}
+            accept="application/pdf"
+            value={file}
+            onChange={setFile}
+            className="flex-1"
+          />
+
+          <Button
+            leftIcon={<IconUpload size={18} />}
+            color="green"
+            onClick={handleUpload}
+            loading={uploading}
+            className="w-full md:w-auto"
+          >
+            Importer la fiche
+          </Button>
+        </div>
       </Card>
 
       <Card withBorder radius="lg" shadow="lg">
