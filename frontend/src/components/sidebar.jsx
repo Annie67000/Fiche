@@ -13,7 +13,6 @@ const menuItems = [
   { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
   { to: "/employes", label: "Employés", icon: IconUsers },
   { to: "/pdf-upload", label: "PDF Upload", icon: IconUpload },
-  { to: "/fiches", label: "Fiches de paie", icon: IconFileText },
   { to: "/historique", label: "Historique", icon: IconHistory },
 ];
 

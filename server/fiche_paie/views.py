@@ -3,11 +3,14 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
 from .models import Employe, FichePaie  # Assure-toi que le modèle existe
 from .serializers import EmployeSerializer, FichePaieSerializer # Tu dois créer ce serializer
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 
 # Création d'un API avec méthode GET et 'AllowAny' pour la permission (Permettre tout)
 @api_view(['GET'])
@@ -212,7 +215,54 @@ def delete_fiche_paie(request, pk):
             {'error': 'Fiche de paie non trouvée'},
             status=status.HTTP_404_NOT_FOUND
         )
-    
+
     fiche.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        identifiant = request.data.get('username')  # Can be matricule or email
+        password = request.data.get('password')
+
+        if not identifiant or not password:
+            return Response({'error': 'Username and password required'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        user = None
+        # Try to find user by matricule
+        try:
+            employe = Employe.objects.get(matricule=identifiant, actif=True)
+            user = employe.user
+        except Employe.DoesNotExist:
+            pass
+
+        # If not found by matricule, try by email
+        if not user:
+            try:
+                user = authenticate(email=identifiant, password=password)
+            except:
+                pass
+
+        # If still not found, try username authentification
+        if not user:
+            user = authenticate(username=identifiant, password=password)
+
+        if user is None or not user.is_active:
+            return Response({'error': 'Invalid credentials'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+            }
+        })
