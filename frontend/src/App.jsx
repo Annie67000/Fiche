@@ -15,6 +15,7 @@ import Sidebar from './components/sidebar.jsx';  // ← vérifie que ce chemin e
 import Home from './page/home.jsx';
 import Employes from './page/Employes.jsx';
 import { PaySlip } from './components/pay-slip.jsx';
+import PdfUpload from './components/pdf-upload.jsx';
 
 export default function App() {
   function PrivateRoute({ children }) {
@@ -48,6 +49,7 @@ export default function App() {
                       <Route path="/" element={<Home />} />
                       {/* Tu ajouteras les autres pages ici plus tard */}
                       <Route path="/employes" element={<Employes />} />
+                      <Route path="/pdf-upload" element={<PdfUpload />} />
                     </Routes>
                   </Box>
                 </Box>
