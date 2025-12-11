@@ -1,5 +1,6 @@
- import { useState } from 'react';
+import { useState } from 'react';
 import { TextInput, PasswordInput, Button, Paper, Title, Text, Anchor, Group, Checkbox } from '@mantine/core';
+import axios from 'axios';
 
 import { useNavigate } from "react-router-dom"
 
@@ -43,35 +44,29 @@ function LoginPage() {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/v1/login/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: formData.username,
-            password: formData.password,
-          }),
+        const response = await axios.post('/api/v1/login/', {
+          username: formData.username,
+          password: formData.password,
         });
 
-        const data = await response.json();
+        const data = response.data;
 
         console.log(data);
 
-        if (response.ok) {
-          const { access, refresh } = data
+        const { access, refresh } = data
 
-          // Sauvegarde le token et l'utilisateur
-          localStorage.setItem('access_token', access);
-          localStorage.setItem('refresh_token', refresh);
+        // Sauvegarde le token et l'utilisateur
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
 
-          // Redirige vers la page d'accueil
-          navigate('/')
-        } else {
-          setErrors({ password: data.error || 'Identifiants invalides' });
-        }
+        // Redirige vers la page d'accueil
+        navigate('/')
       } catch (err) {
-        setErrors({ password: 'Erreur de connexion au serveur' });
+        if (err.response && err.response.status === 401) {
+          setErrors({ password: err.response.data.error || 'Identifiants invalides' });
+        } else {
+          setErrors({ password: 'Erreur de connexion au serveur' });
+        }
       } finally {
         setIsLoading(false);
       }

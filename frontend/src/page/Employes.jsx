@@ -288,7 +288,6 @@ export default function Employes() {
           />
 
           <Button
-            leftIcon={<IconUpload size={18} />}
             color="green"
             onClick={handleUpload}
             loading={uploading}
