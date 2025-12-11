@@ -95,7 +95,7 @@ function LoginPage() {
       width: '90px',
       height: '90px',
       borderRadius: '50%',
-      backgroundColor: '#667eea',
+      backgroundColor: '#51cf66',
       margin: '-50px auto 30px',
       display: 'flex',
       justifyContent: 'center',
@@ -140,18 +140,19 @@ function LoginPage() {
           />
           <Group position="apart" style={{ marginBottom: '25px' }}>
             <Checkbox label="Se souvenir de moi" />
-            <Anchor href="#" size="sm" style={{ color: '#667eea' }}>Mot de passe oublié ?</Anchor>
+            <Anchor href="#" size="sm" style={{ color: '#51cf66' }}>Mot de passe oublié ?</Anchor>
           </Group>
           <Button
             fullWidth
             type="submit"
             loading={isLoading}
-            className='bg-gray-300'
             style={{
               marginTop: '10px',
               height: '45px',
               fontWeight: '600',
               fontSize: '16px',
+              backgroundColor: '#51cf66',
+              color: 'white',
             }}
           >
             SE CONNECTER
@@ -159,7 +160,7 @@ function LoginPage() {
         </form>
         <Text align="center" mt="md" style={{ marginTop: '25px' }}>
           Vous n'avez pas de compte ?{' '}
-          <Anchor href="/inscription" weight={700} style={{ color: '#667eea' }}>S'inscrire</Anchor>
+          <Anchor href="/inscription" weight={700} style={{ color: '#51cf66' }}>S'inscrire</Anchor>
         </Text>
       </Paper>
     </div>
