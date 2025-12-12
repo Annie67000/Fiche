@@ -38,7 +38,7 @@ export default function Home() {
               <Text size="md" c="dimmed" tt="uppercase" fw={500}>
                 Employés enregistrés
               </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="right">
+              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="center">
                 2
               </Text>
             </Box>
@@ -56,7 +56,7 @@ export default function Home() {
               <Text size="md" c="dimmed" tt="uppercase" fw={500}>
                 Fiches importées
               </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="right">
+              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="center">
                 2
               </Text>
             </Box>
@@ -73,7 +73,7 @@ export default function Home() {
               <Text size="md" c="dimmed" tt="uppercase" fw={500}>
                 Envois réussis
               </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="right">
+              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="center">
                 1
               </Text>
             </Box>
@@ -91,7 +91,7 @@ export default function Home() {
               <Text size="md" c="dimmed" tt="uppercase" fw={500}>
                 Envois échoués
               </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="right">
+              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="center">
                 129898
               </Text>
             </Box>
@@ -134,7 +134,7 @@ export default function Home() {
               <Text size="sm" c="dimmed">Envoyé</Text>
             </Group>
             <Group gap="xs">
-              <Box w={12} h={12} bg="#339af0" style={{ borderRadius: 6 }} />
+              <Box w={12} h={12} bg="#ffc107" style={{ borderRadius: 6 }} />
               <Text size="sm" c="dimmed">En attente</Text>
             </Group>
             <Group gap="xs">
