@@ -1,6 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
+import { Viewer } from '@react-pdf-viewer/core';
+import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
 const API_BASE_URL = 'http://localhost:8001';
 
@@ -10,6 +14,7 @@ const PdfUpload = () => {
   const [status, setStatus] = useState(null);
   const [processedPaths, setProcessedPaths] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [viewingPdf, setViewingPdf] = useState(null);
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
@@ -185,6 +190,7 @@ const PdfUpload = () => {
                 <tr>
                   <th className="py-2 px-4 border-b text-left">#</th>
                   <th className="py-2 px-4 border-b text-left">PDF Path</th>
+                  <th className="py-2 px-4 border-b text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -192,10 +198,49 @@ const PdfUpload = () => {
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="py-2 px-4 border-b text-sm font-mono">{index + 1}</td>
                     <td className="py-2 px-4 border-b font-mono text-sm break-all">{path}</td>
+                    <td className="py-2 px-4 border-b text-sm">
+                      <button
+                        onClick={() => setViewingPdf(path)}
+                        className="mr-2 px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                      >
+                        Voir
+                      </button>
+                      <button
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = `${API_BASE_URL}/media/${path}`;
+                          link.download = path.split('/').pop();
+                          link.click();
+                        }}
+                        className="px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
+                      >
+                        Télécharger
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {viewingPdf && (
+        <div className="mt-8 p-4 bg-gray-100 rounded">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Viewing: {viewingPdf}</h3>
+            <button
+              onClick={() => setViewingPdf(null)}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              Fermer
+            </button>
+          </div>
+          <div className="border h-[600px]">
+            <Viewer
+              fileUrl={`${API_BASE_URL}/media/${viewingPdf}`}
+              plugins={[defaultLayoutPlugin()]}
+            />
           </div>
         </div>
       )}
