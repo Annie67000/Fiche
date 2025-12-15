@@ -1,3 +1,5 @@
 .venv
 *.pdf
 *.pyc
+
+pdf_separate_intelligent

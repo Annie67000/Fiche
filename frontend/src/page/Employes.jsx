@@ -223,6 +223,7 @@ export default function Employes() {
       <Card withBorder radius="lg" p="lg" mb={40}>
         <Group position="apart">
           <TextInput
+            label="Employés"
             placeholder="Rechercher un employé..."
             icon={<IconSearch />}
             value={search}
@@ -242,7 +243,7 @@ export default function Employes() {
         </Group>
       </Card>
 
-      <Card
+      {/* <Card
         withBorder
         radius="lg"
         p="lg"
@@ -296,7 +297,7 @@ export default function Employes() {
             Importer la fiche
           </Button>
         </div>
-      </Card>
+      </Card> */}
 
       <Card withBorder radius="lg" shadow="lg">
         <Table highlightOnHover verticalSpacing="md">

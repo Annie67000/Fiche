@@ -26,13 +26,14 @@ export default function LineChart() {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     datasets: [
       {
-        label: "Ventes 2025",
-        data: [150, 200, 180, 220, 260, 300],
-        borderColor: "rgba(75, 192, 192, 1)",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
-        borderWidth: 2,
-        pointRadius: 4,
-        tension: 0.4, // Courbe douce
+        label: "Transactions",
+        data: [50, 75, 125, 100, 200, 150], // Adjusted realistic data
+        borderColor: "#51cf66", // Green to match project
+        backgroundColor: "rgba(81, 207, 102, 0.2)", // Semi-transparent green fill
+        borderWidth: 3,
+        pointRadius: 5,
+        pointBackgroundColor: "#51cf66",
+        tension: 0.3, // Smoother curve
       },
     ],
   };
