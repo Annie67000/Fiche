@@ -15,6 +15,7 @@ const PdfUpload = () => {
   const [processedPaths, setProcessedPaths] = useState([]);
   const [loading, setLoading] = useState(false);
   const [viewingPdf, setViewingPdf] = useState(null);
+  const [processDetail, setProcessDetail] = useState(null);
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
@@ -66,6 +67,7 @@ const PdfUpload = () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/task/${taskId}`);
         setStatus(response.data.status);
+        setProcessDetail(response.data.detail || null);
 
         if (response.data.status === 'Completed') {
           clearInterval(interval);
@@ -91,7 +93,7 @@ const PdfUpload = () => {
         setLoading(false);
         alert('Error checking task status. Please try again.');
       }
-    }, 2000); // Poll every 2 seconds
+    }, 100); // Poll every 2 seconds
   };
 
   return (
@@ -181,6 +183,13 @@ const PdfUpload = () => {
         </p>
       )}
 
+      {processDetail && (
+        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <h3 className="text-lg font-semibold mb-2">Détails du traitement :</h3>
+          <p className="text-sm text-yellow-800 whitespace-pre-wrap">{processDetail}</p>
+        </div>
+      )}
+
       {processedPaths.length > 0 && (
         <div className="mt-8">
           <h3 className="text-xl font-semibold mb-4">Processed PDF Paths:</h3>
@@ -228,7 +237,7 @@ const PdfUpload = () => {
       {viewingPdf && (
         <div className="mt-8 p-4 bg-gray-100 rounded">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Viewing: {viewingPdf}</h3>
+            <h3 className="text-lg font-semibold">Viewing: {viewingPdf.split('/').pop()}</h3>
             <button
               onClick={() => setViewingPdf(null)}
               className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
