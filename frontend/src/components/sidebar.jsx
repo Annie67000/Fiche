@@ -13,7 +13,7 @@ const menuItems = [
   { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
   { to: "/employes", label: "Employés", icon: IconUsers },
   { to: "/pdf-upload", label: "PDF Upload", icon: IconUpload },
-  { to: "/historique", label: "Historique", icon: IconHistory },
+  // { to: "/historique", label: "Historique", icon: IconHistory },
 ];
 
 export default function Sidebar() {
