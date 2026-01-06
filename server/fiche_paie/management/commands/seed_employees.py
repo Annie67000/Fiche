@@ -18,7 +18,7 @@ class Command(BaseCommand):
             return
 
         with open(csv_file_path, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
+            reader = csv.reader(f, delimiter=';')
             next(reader, None)  # Skip header
 
             for row_num, row in enumerate(reader):
