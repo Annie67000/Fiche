@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
 import { Viewer } from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+import { X } from 'lucide-react';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
@@ -159,10 +160,7 @@ const PdfUpload = () => {
                 className="text-red-500 hover:text-red-700 p-1"
                 title="Supprimer le fichier"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd"></path>
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd"></path>
-                </svg>
+                <X className="w-5 h-5 cursor-pointer" />
               </button>
             </div>
           </div>
