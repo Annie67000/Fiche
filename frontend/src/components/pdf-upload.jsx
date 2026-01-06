@@ -19,7 +19,7 @@ const PdfUpload = () => {
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
-      alert('Only PDF files are accepted. Please select a valid PDF file.');
+      alert('Seuls les fichiers PDF sont acceptés. Veuillez sélectionner un fichier PDF valide.');
       return;
     }
     if (acceptedFiles.length > 0) {
@@ -38,7 +38,7 @@ const PdfUpload = () => {
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      alert('Please select a PDF file first');
+      alert('Veuillez d\'abord sélectionner un fichier PDF');
       return;
     }
 
@@ -53,7 +53,7 @@ const PdfUpload = () => {
       pollTaskStatus(response.data.task_id);
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Upload failed. Please try again.');
+      alert('Échec du téléversement. Veuillez réessayer.');
       setLoading(false);
     }
   };
@@ -91,7 +91,7 @@ const PdfUpload = () => {
         console.error('Status check error:', error);
         clearInterval(interval);
         setLoading(false);
-        alert('Error checking task status. Please try again.');
+        alert('Erreur lors de la vérification du statut de la tâche. Veuillez réessayer.');
       }
     }, 100); // Poll every 2 seconds
   };
@@ -121,18 +121,18 @@ const PdfUpload = () => {
               {isDragActive ? (
                 <p className="text-lg font-medium">
                   {isDragAccept ? (
-                    <span className="text-green-600">Drop the PDF file here...</span>
+                    <span className="text-green-600">Déposez le fichier PDF ici...</span>
                   ) : (
-                    <span className="text-red-600">Only PDF files are allowed</span>
+                    <span className="text-red-600">Seuls les fichiers PDF sont autorisés</span>
                   )}
                 </p>
               ) : (
                 <div>
                   <p className="text-lg font-medium text-gray-900">
-                    Drag & drop a PDF file here, or click to select
+                    Glissez-déposez un fichier PDF ici, ou cliquez pour sélectionner
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Only PDF files are accepted (max 50MB)
+                    Seuls les fichiers PDF sont acceptés (max 50 Mo)
                   </p>
                 </div>
               )}
@@ -157,7 +157,7 @@ const PdfUpload = () => {
               <button
                 onClick={removeFile}
                 className="text-red-500 hover:text-red-700 p-1"
-                title="Remove file"
+                title="Supprimer le fichier"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd"></path>
@@ -179,7 +179,7 @@ const PdfUpload = () => {
 
       {status && (
         <p className="mt-4 text-center text-lg">
-          Status: <span className={status === 'Completed' ? 'text-green-600' : 'text-blue-600'}>{status}</span>
+          Statut : <span className={status === 'Completed' ? 'text-green-600' : 'text-blue-600'}>{status === 'Completed' ? 'Terminé' : status}</span>
         </p>
       )}
 
@@ -192,13 +192,13 @@ const PdfUpload = () => {
 
       {processedPaths.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4">Processed PDF Paths:</h3>
+          <h3 className="text-xl font-semibold mb-4">Chemins des PDF traités :</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-300">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="py-2 px-4 border-b text-left">#</th>
-                  <th className="py-2 px-4 border-b text-left">PDF Path</th>
+                  <th className="py-2 px-4 border-b text-left">Chemin du PDF</th>
                   <th className="py-2 px-4 border-b text-left">Actions</th>
                 </tr>
               </thead>
@@ -237,7 +237,7 @@ const PdfUpload = () => {
       {viewingPdf && (
         <div className="mt-8 p-4 bg-gray-100 rounded">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Viewing: {viewingPdf.split('/').pop()}</h3>
+            <h3 className="text-lg font-semibold">Visualisation : {viewingPdf.split('/').pop()}</h3>
             <button
               onClick={() => setViewingPdf(null)}
               className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
