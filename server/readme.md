@@ -19,6 +19,12 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
+- Enregistrer les données avec seeds
+
+```bash
+python manage.py seed_employees
+```
+
 - Lancer l'application Django
 
 
