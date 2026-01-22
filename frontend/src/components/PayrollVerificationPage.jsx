@@ -11,18 +11,18 @@ import {
   Paper,
   Modal,
   Stack,
-  FileInput,
+  Loader,
 } from '@mantine/core';
-import { IconSearch, IconEye, IconDownload, IconCheck, IconX, IconFolder } from '@tabler/icons-react';
+import { IconSearch, IconEye, IconDownload, IconRefresh } from '@tabler/icons-react';
 
 const PayrollVerificationPage = () => {
-  const [fiches, setFiches] = useState([]); // ← maintenant dynamique
+  const [fiches, setFiches] = useState([]);
   const [filteredFiches, setFilteredFiches] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
-  const fileInputRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   // Filtrage en temps réel
   useEffect(() => {
@@ -32,47 +32,64 @@ const PayrollVerificationPage = () => {
     setFilteredFiches(filtered);
   }, [searchTerm, fiches]);
 
+  // Charger les fiches depuis l'API
+  useEffect(() => {
+    loadFichesFromAPI();
+  }, []);
+
   // Extraire le matricule du nom de fichier (ex: "1266_NOM_PRENOM.pdf" → "1266")
   const extractMatricule = (fileName) => {
     const match = fileName.match(/^(\d+)_/);
     return match ? match[1] : 'inconnu';
   };
 
-  // Gérer la sélection d’un dossier
-  const handleDirectorySelect = (files) => {
-    if (!files || files.length === 0) return;
-
-    const pdfFiles = Array.from(files).filter(file =>
-      file.name.toLowerCase().endsWith('.pdf')
-    );
-
-    if (pdfFiles.length === 0) {
-      setError("Aucun fichier PDF trouvé dans le dossier sélectionné.");
-      setFiches([]);
-      return;
-    }
-
-    // Créer une entrée pour chaque PDF
-    const newFiches = pdfFiles.map((file, index) => ({
-      id: index + 1,
-      matricule: extractMatricule(file.name),
-      fileName: file.name,
-      fileObject: file, // ← on garde le fichier pour affichage/téléchargement
-      objectUrl: URL.createObjectURL(file), // ← URL temporaire pour iframe & download
-    }));
-
-    setFiches(newFiches);
+  // Charger les fiches depuis l'API
+  const loadFichesFromAPI = async () => {
+    setLoading(true);
     setError(null);
+    try {
+      const response = await fetch('http://localhost:8001/folders');
+      if (!response.ok) throw new Error('Erreur lors de la récupération des dossiers');
+      const data = await response.json();
+      const folders = data.folders;
+
+      const allFiches = [];
+      let id = 1;
+
+      for (const folderPath of folders) {
+        const folderName = folderPath.split('/').pop(); // extraire le nom du dossier
+        const filesResponse = await fetch(`http://localhost:8001/list_files/${folderName}`);
+        if (!filesResponse.ok) continue;
+        const filesData = await filesResponse.json();
+        const files = filesData.files;
+
+        for (const relPath of files) {
+          const baseName = relPath.split('/').pop();
+          allFiches.push({
+            id: id++,
+            matricule: extractMatricule(baseName),
+            fileName: relPath,
+            url: `http://localhost:8001/media/${folderName}/${relPath}`,
+          });
+        }
+      }
+
+      setFiches(allFiches);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDisplay = (fiche) => {
-    setSelectedPdf(fiche.objectUrl);
+    setSelectedPdf(fiche.url);
     setPdfModalOpen(true);
   };
 
   const handleDownload = (fiche) => {
     const link = document.createElement('a');
-    link.href = fiche.objectUrl;
+    link.href = fiche.url;
     link.download = fiche.fileName;
     document.body.appendChild(link);
     link.click();
@@ -83,13 +100,6 @@ const PayrollVerificationPage = () => {
     const status = isValid ? 'correspond' : 'ne correspond pas';
     alert(`Matricule ${fiche.matricule} : ${status}`);
   };
-
-  // Nettoyer les URLs objets à la fin (éviter fuites mémoire)
-  useEffect(() => {
-    return () => {
-      fiches.forEach(f => URL.revokeObjectURL(f.objectUrl));
-    };
-  }, [fiches]);
 
   return (
     <Box p="xl" h="100vh" style={{ overflow: 'hidden' }}>
@@ -102,23 +112,15 @@ const PayrollVerificationPage = () => {
           <Divider my="sm" />
         </Box>
 
-        {/* Bouton pour sélectionner un dossier */}
+        {/* Bouton pour recharger */}
         <Group position="center" mb="md">
           <Button
-            leftSection={<IconFolder size={16} />}
-            onClick={() => fileInputRef.current?.click()}
+            leftSection={<IconRefresh size={16} />}
+            onClick={loadFichesFromAPI}
+            loading={loading}
           >
-            Sélectionner un dossier de bulletins
+            Recharger les bulletins
           </Button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            webkitdirectory="true"
-            directory="true"
-            multiple
-            onChange={(e) => handleDirectorySelect(e.target.files)}
-          />
         </Group>
 
         {/* Search */}
@@ -138,9 +140,14 @@ const PayrollVerificationPage = () => {
         {/* Liste des fiches */}
         <ScrollArea h="100%" scrollbarSize={8}>
           <Stack spacing="sm" mt="md">
-            {fiches.length === 0 ? (
+            {loading ? (
+              <Group position="center" mt="xl">
+                <Loader size="lg" />
+                <Text>Chargement des bulletins...</Text>
+              </Group>
+            ) : fiches.length === 0 ? (
               <Text color="dimmed" align="center" mt="xl">
-                Cliquez sur "Sélectionner un dossier" pour charger vos fiches de paie.
+                Aucun bulletin disponible. Cliquez sur "Recharger les bulletins".
               </Text>
             ) : filteredFiches.length === 0 ? (
               <Text color="dimmed" align="center" mt="xl">
