@@ -2,7 +2,6 @@
 // All packages except `@mantine/hooks` require styles imports
 import '@mantine/core/styles.css';
 
-
 import '@mantine/dates/styles.css';
 
 import { MantineProvider } from '@mantine/core';
@@ -12,6 +11,7 @@ import { Box } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';        // ← AJOUTÉ
 import LoginPage from './components/login.jsx';
 import Sidebar from './components/sidebar.jsx';  // ← vérifie que ce chemin est bon
+import PayrollVerificationPage from './components/PayrollVerificationPage.jsx';
 import Home from './page/home.jsx';
 import Employes from './page/Employes.jsx';
 import { PaySlip } from './components/pay-slip.jsx';
@@ -22,7 +22,6 @@ export default function App() {
     const token = localStorage.getItem('access_token');
     return token ? children : <Navigate to="/login" replace />;
   }
-
 
   return (
     <MantineProvider>
@@ -35,28 +34,25 @@ export default function App() {
             element={
               <PrivateRoute>
                 <Box style={{ display: 'flex', minHeight: '100vh' }}>
-                  {/* Sidebar */}
                   <Sidebar />
-                  {/* Contenu principal */}
                   <Box
                     ml={280}
                     w="calc(100% - 280px)"
-                    bg="#f8f9fa"        // ← fond gris clair
+                    bg="#f8f9fa"
                     p="xl"
                     style={{ minHeight: '100vh' }}
                   >
                     <Routes>
                       <Route path="/" element={<Home />} />
-                      {/* Tu ajouteras les autres pages ici plus tard */}
                       <Route path="/employes" element={<Employes />} />
                       <Route path="/pdf-upload" element={<PdfUpload />} />
+                      <Route path="/verification" element={<PayrollVerificationPage />} />
                     </Routes>
                   </Box>
                 </Box>
               </PrivateRoute>
             }
           />
-          <Route path="/fiches" element={<PaySlip />} />
         </Routes>
       </Router>
     </MantineProvider>

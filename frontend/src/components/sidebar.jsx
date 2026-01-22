@@ -6,13 +6,15 @@ import {
   IconFileText,
   IconHistory,
   IconLogout,
-  IconUpload
+  IconUpload,
+  IconSettings
 } from '@tabler/icons-react';
 
 const menuItems = [
   { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
   { to: "/employes", label: "Employés", icon: IconUsers },
   { to: "/pdf-upload", label: "PDF Upload", icon: IconUpload },
+  { to: "/verification", label: "Vérification", icon: IconFileText },
   // { to: "/historique", label: "Historique", icon: IconHistory },
 ];
 
@@ -20,7 +22,7 @@ export default function Sidebar() {
   const location = useLocation();
 
   return (
-    <Box w={280} className='bg-green-700' h="100vh" p="md" style={{ position: 'fixed', left: 0, top: 0 }}>
+    <Box w={280} className='bg-green-700' h="100vh" p="md" style={{ position: 'fixed', left: 0, top: 0, borderRight: '1px solid rgba(255,255,255,0.2)' }}>
       <ScrollArea h="100%"  scrollbarSize={8}>
         {/* Logo + Titre */}
         <Box className='flex flex-col items-center justify-center' my="xl">
