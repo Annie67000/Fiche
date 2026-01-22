@@ -172,22 +172,6 @@ const PayrollVerificationPage = () => {
                     >
                       Télécharger
                     </Button>
-                    <Button
-                      size="xs"
-                      color="green"
-                      leftSection={<IconCheck size={14} />}
-                      onClick={() => handleVerify(fiche, true)}
-                    >
-                      Correspond
-                    </Button>
-                    <Button
-                      size="xs"
-                      color="red"
-                      leftSection={<IconX size={14} />}
-                      onClick={() => handleVerify(fiche, false)}
-                    >
-                      Ne correspond pas
-                    </Button>
                   </Group>
                 </Paper>
               ))
