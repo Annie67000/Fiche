@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Text,
@@ -12,38 +12,76 @@ import {
   Modal,
   Stack,
   Loader,
+  Collapse,
+  Pagination,
 } from '@mantine/core';
-import { IconSearch, IconEye, IconDownload, IconRefresh } from '@tabler/icons-react';
+import { IconSearch, IconEye, IconDownload, IconRefresh, IconChevronDown, IconChevronRight, IconFolder } from '@tabler/icons-react';
+
+const ITEMS_PER_PAGE = 10;
 
 const PayrollVerificationPage = () => {
   const [fiches, setFiches] = useState([]);
-  const [filteredFiches, setFilteredFiches] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Filtrage en temps réel
-  useEffect(() => {
-    const filtered = fiches.filter((fiche) =>
-      fiche.matricule.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredFiches(filtered);
-  }, [searchTerm, fiches]);
+  // States for folder-based navigation
+  const [openFolder, setOpenFolder] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Charger les fiches depuis l'API
-  useEffect(() => {
-    loadFichesFromAPI();
-  }, []);
-
-  // Extraire le matricule du nom de fichier (ex: "1266_NOM_PRENOM.pdf" → "1266")
+  // Extract matricule from filename
   const extractMatricule = (fileName) => {
     const match = fileName.match(/^(\d+)_/);
     return match ? match[1] : 'inconnu';
   };
 
-  // Charger les fiches depuis l'API
+  // Group data by folder name
+  const groupedData = useMemo(() => {
+    const groups = {};
+
+    fiches.forEach(fiche => {
+      const folderName = fiche.folderName;
+      if (!groups[folderName]) {
+        groups[folderName] = [];
+      }
+      groups[folderName].push(fiche);
+    });
+
+    // Sort folders alphabetically and sort files within each folder by matricule
+    const sortedFolders = Object.keys(groups).sort();
+
+    const sortedGroups = {};
+    sortedFolders.forEach(folder => {
+      sortedGroups[folder] = groups[folder].sort((a, b) =>
+        a.matricule.localeCompare(b.matricule)
+      );
+    });
+
+    return sortedGroups;
+  }, [fiches]);
+
+  // Get current folder's pay slips with pagination
+  const currentFolderSlips = useMemo(() => {
+    if (!openFolder || !groupedData[openFolder]) {
+      return [];
+    }
+    return groupedData[openFolder];
+  }, [groupedData, openFolder]);
+
+  const totalPages = Math.ceil(currentFolderSlips.length / ITEMS_PER_PAGE);
+  const paginatedSlips = currentFolderSlips.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset pagination when folder changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [openFolder]);
+
+  // Load fiches from API
   const loadFichesFromAPI = async () => {
     setLoading(true);
     setError(null);
@@ -57,7 +95,7 @@ const PayrollVerificationPage = () => {
       let id = 1;
 
       for (const folderPath of folders) {
-        const folderName = folderPath.split('/').pop(); // extraire le nom du dossier
+        const folderName = folderPath.split('/').pop();
         const filesResponse = await fetch(`http://localhost:8001/list_files/${folderName}`);
         if (!filesResponse.ok) continue;
         const filesData = await filesResponse.json();
@@ -65,10 +103,12 @@ const PayrollVerificationPage = () => {
 
         for (const relPath of files) {
           const baseName = relPath.split('/').pop();
+
           allFiches.push({
             id: id++,
             matricule: extractMatricule(baseName),
             fileName: relPath,
+            folderName: folderName,
             url: `http://localhost:8001/media/${folderName}/${relPath}`,
           });
         }
@@ -80,6 +120,12 @@ const PayrollVerificationPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle folder selection
+  const handleFolderClick = (folderName) => {
+    setOpenFolder(openFolder === folderName ? null : folderName);
+    setCurrentPage(1);
   };
 
   const handleDisplay = (fiche) => {
@@ -101,6 +147,10 @@ const PayrollVerificationPage = () => {
     alert(`Matricule ${fiche.matricule} : ${status}`);
   };
 
+  useEffect(() => {
+    loadFichesFromAPI();
+  }, []);
+
   return (
     <Box p="xl" h="100vh" style={{ overflow: 'hidden' }}>
       <Stack h="100%">
@@ -112,7 +162,7 @@ const PayrollVerificationPage = () => {
           <Divider my="sm" />
         </Box>
 
-        {/* Bouton pour recharger */}
+        {/* Reload Button */}
         <Group position="center" mb="md">
           <Button
             leftSection={<IconRefresh size={16} />}
@@ -137,7 +187,7 @@ const PayrollVerificationPage = () => {
 
         {error && <Alert color="red" title="Erreur">{error}</Alert>}
 
-        {/* Liste des fiches */}
+        {/* Folder-based Navigation */}
         <ScrollArea h="100%" scrollbarSize={8}>
           <Stack spacing="sm" mt="md">
             {loading ? (
@@ -145,86 +195,137 @@ const PayrollVerificationPage = () => {
                 <Loader size="lg" />
                 <Text>Chargement des bulletins...</Text>
               </Group>
-            ) : fiches.length === 0 ? (
+            ) : Object.keys(groupedData).length === 0 ? (
               <Text color="dimmed" align="center" mt="xl">
                 Aucun bulletin disponible. Cliquez sur "Recharger les bulletins".
               </Text>
-            ) : filteredFiches.length === 0 ? (
-              <Text color="dimmed" align="center" mt="xl">
-                Aucun bulletin trouvé pour "{searchTerm}"
-              </Text>
             ) : (
-              filteredFiches.map((fiche) => (
-                <Paper key={fiche.id} p="md" shadow="xs" withBorder>
-                  <Text size="sm" weight={500}>
-                    Matricule : <strong>{fiche.matricule}</strong>
-                  </Text>
-                  <Text size="xs" color="dimmed" mt={2}>
-                    {fiche.fileName}
-                  </Text>
-                  <Group mt="sm" spacing="xs">
-                    <Button
-                      size="xs"
-                      variant="outline"
-                      leftSection={<IconEye size={14} />}
-                      onClick={() => handleDisplay(fiche)}
-                    >
-                      Afficher
-                    </Button>
-                    <Button
-                      size="xs"
-                      variant="outline"
-                      leftSection={<IconDownload size={14} />}
-                      onClick={() => handleDownload(fiche)}
-                    >
-                      Télécharger
-                    </Button>
-                  </Group>
-                </Paper>
+              Object.entries(groupedData).map(([folderName, slips]) => (
+                <Box key={folderName}>
+                  {/* Folder Header */}
+                  <Button
+                    variant="subtle"
+                    fullWidth
+                    leftSection={
+                      <IconFolder size={16} style={{ marginRight: '8px' }} />
+                    }
+                    rightSection={
+                      openFolder === folderName ?
+                        <IconChevronDown size={16} /> :
+                        <IconChevronRight size={16} />
+                    }
+                    onClick={() => handleFolderClick(folderName)}
+                    styles={{
+                      inner: { justifyContent: 'space-between' },
+                      label: { fontWeight: 600 }
+                    }}
+                  >
+                    {folderName} ({slips.length} bulletins)
+                  </Button>
+
+                  {/* Pay Slips */}
+                  <Collapse in={openFolder === folderName}>
+                    <Stack spacing="xs" ml="lg" mt="xs">
+                      {paginatedSlips.length === 0 ? (
+                        <Text size="sm" color="dimmed" align="center" p="md">
+                          Aucun bulletin disponible dans le dossier {folderName}
+                        </Text>
+                      ) : (
+                        <>
+                          {paginatedSlips
+                            .filter(fiche =>
+                              fiche.matricule.toLowerCase().includes(searchTerm.toLowerCase())
+                            )
+                            .map((fiche) => (
+                              <Paper key={fiche.id} p="sm" shadow="xs" withBorder>
+                                <Text size="sm" weight={500}>
+                                  Matricule : <strong>{fiche.matricule}</strong>
+                                </Text>
+                                <Text size="xs" color="dimmed" mt={2}>
+                                  {fiche.fileName}
+                                </Text>
+                                <Group mt="xs" spacing="xs">
+                                  <Button
+                                    size="xs"
+                                    variant="outline"
+                                    leftSection={<IconEye size={14} />}
+                                    onClick={() => handleDisplay(fiche)}
+                                  >
+                                    Afficher
+                                  </Button>
+                                  <Button
+                                    size="xs"
+                                    variant="outline"
+                                    leftSection={<IconDownload size={14} />}
+                                    onClick={() => handleDownload(fiche)}
+                                  >
+                                    Télécharger
+                                  </Button>
+                                </Group>
+                              </Paper>
+                            ))}
+                        </>
+                      )}
+
+                      {/* Pagination */}
+                      {openFolder === folderName && totalPages > 1 && (
+                        <Group position="center" mt="md">
+                          <Pagination
+                            total={totalPages}
+                            value={currentPage}
+                            onChange={setCurrentPage}
+                            size="sm"
+                          />
+                        </Group>
+                      )}
+                    </Stack>
+                  </Collapse>
+                </Box>
               ))
             )}
           </Stack>
         </ScrollArea>
       </Stack>
-      {/* Modal pour afficher le PDF */}
-<Modal
-  opened={pdfModalOpen}
-  onClose={() => {
-    setPdfModalOpen(false);
-    setSelectedPdf(null);
-  }}
-  title="Aperçu du Bulletin de Paie"
-  size="100%"
-  fullScreen
-  padding={0} // ← Supprime les marges internes du modal
-  withCloseButton={false} // Optionnel : si tu veux retirer le "X" en haut à droite
->
-  {selectedPdf ? (
-    <Box
-      style={{
-        width: '100%',
-        height: '100vh', // ← Prend toute la hauteur de l'écran
-        overflow: 'hidden',
-        background: '#fff',
-      }}
-    >
-      <iframe
-        src={selectedPdf}
-        width="100%"
-        height="100%" // ← Prend toute la hauteur du conteneur
-        style={{
-          border: 'none',
-          display: 'block',
-          margin: 0,
-          padding: 0,
+
+      {/* PDF Modal */}
+      <Modal
+        opened={pdfModalOpen}
+        onClose={() => {
+          setPdfModalOpen(false);
+          setSelectedPdf(null);
         }}
-        title="PDF Viewer"
-      />
-    </Box>
-  ) : (
-    <Text p="xl" align="center">Impossible de charger le PDF.</Text>
-  )}
-</Modal>
+        title="Aperçu du Bulletin de Paie"
+        size="100%"
+        fullScreen
+        padding={0}
+        withCloseButton={false}
+      >
+        {selectedPdf ? (
+          <Box
+            style={{
+              width: '100%',
+              height: '100vh',
+              overflow: 'hidden',
+              background: '#fff',
+            }}
+          >
+            <iframe
+              src={selectedPdf}
+              width="100%"
+              height="100%"
+              style={{
+                border: 'none',
+                display: 'block',
+                margin: 0,
+                padding: 0,
+              }}
+              title="PDF Viewer"
+            />
+          </Box>
+        ) : (
+          <Text p="xl" align="center">Impossible de charger le PDF.</Text>
+        )}
+      </Modal>
     </Box>
   );
 };
