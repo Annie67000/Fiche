@@ -14,8 +14,11 @@ import {
   Loader,
   Collapse,
   Pagination,
+  Card,
+  Grid,
+  Badge,
 } from '@mantine/core';
-import { IconSearch, IconEye, IconDownload, IconRefresh, IconChevronDown, IconChevronRight, IconFolder } from '@tabler/icons-react';
+import { IconSearch, IconEye, IconDownload, IconRefresh, IconChevronDown, IconChevronRight, IconFolder, IconX } from '@tabler/icons-react';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -28,7 +31,7 @@ const PayrollVerificationPage = () => {
   const [loading, setLoading] = useState(false);
 
   // States for folder-based navigation
-  const [openFolder, setOpenFolder] = useState(null);
+  const [selectedFolder, setSelectedFolder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Extract matricule from filename
@@ -64,11 +67,11 @@ const PayrollVerificationPage = () => {
 
   // Get current folder's pay slips with pagination
   const currentFolderSlips = useMemo(() => {
-    if (!openFolder || !groupedData[openFolder]) {
+    if (!selectedFolder || !groupedData[selectedFolder]) {
       return [];
     }
-    return groupedData[openFolder];
-  }, [groupedData, openFolder]);
+    return groupedData[selectedFolder];
+  }, [groupedData, selectedFolder]);
 
   const totalPages = Math.ceil(currentFolderSlips.length / ITEMS_PER_PAGE);
   const paginatedSlips = currentFolderSlips.slice(
@@ -79,7 +82,7 @@ const PayrollVerificationPage = () => {
   // Reset pagination when folder changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [openFolder]);
+  }, [selectedFolder]);
 
   // Load fiches from API
   const loadFichesFromAPI = async () => {
@@ -124,7 +127,7 @@ const PayrollVerificationPage = () => {
 
   // Handle folder selection
   const handleFolderClick = (folderName) => {
-    setOpenFolder(openFolder === folderName ? null : folderName);
+    setSelectedFolder(selectedFolder === folderName ? null : folderName);
     setCurrentPage(1);
   };
 
@@ -189,7 +192,7 @@ const PayrollVerificationPage = () => {
 
         {/* Folder-based Navigation */}
         <ScrollArea h="100%" scrollbarSize={8}>
-          <Stack spacing="sm" mt="md">
+          <Box mt="md">
             {loading ? (
               <Group position="center" mt="xl">
                 <Loader size="lg" />
@@ -200,75 +203,93 @@ const PayrollVerificationPage = () => {
                 Aucun bulletin disponible. Cliquez sur "Recharger les bulletins".
               </Text>
             ) : (
-              Object.entries(groupedData).map(([folderName, slips]) => (
-                <Box key={folderName}>
-                  {/* Folder Header */}
-                  <Button
-                    variant="subtle"
-                    fullWidth
-                    leftSection={
-                      <IconFolder size={16} style={{ marginRight: '8px' }} />
-                    }
-                    rightSection={
-                      openFolder === folderName ?
-                        <IconChevronDown size={16} /> :
-                        <IconChevronRight size={16} />
-                    }
-                    onClick={() => handleFolderClick(folderName)}
-                    styles={{
-                      inner: { justifyContent: 'space-between' },
-                      label: { fontWeight: 600 }
-                    }}
-                  >
-                    {folderName} ({slips.length} bulletins)
+              <Grid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
+                {Object.entries(groupedData).map(([folderName, slips]) => (
+                  <Grid.Col key={folderName} span={1}>
+                    <Card
+                      shadow="sm"
+                      padding="lg"
+                      radius="md"
+                      onClick={() => handleFolderClick(folderName)}
+                      className='min-w-[130px] w-auto'
+                      sx={{
+                        cursor: 'pointer',
+                        backgroundColor: '#f8f9fa',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                        height: '140px',
+                        '&:hover': {
+                          transform: 'scale(1.02)',
+                          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                          transition: 'all 0.2s ease',
+                        },
+                      }}
+                    >
+                      <IconFolder size={32} color="#228be6" style={{ marginBottom: '8px' }} />
+                      <Text weight={600} size="md" color="#228be6" style={{ marginBottom: '8px' }}>
+                        {folderName}
+                      </Text>
+                      <Badge color="blue" variant="light" size="sm" radius="xl">
+                        {slips.length} bulletins
+                      </Badge>
+                    </Card>
+                  </Grid.Col>
+                ))}
+              </Grid>
+            )}
+
+            {selectedFolder && (
+              <Box mt="lg">
+                <Divider my="md" />
+                <Group position="apart" mb="md">
+                  <Text size="lg" weight={600}>Contenu du dossier: {selectedFolder}</Text>
+                  <Button variant="subtle" size="sm" leftSection={<IconX size={16} />} onClick={() => setSelectedFolder(null)}>
+                    Fermer
                   </Button>
-
-                  {/* Pay Slips */}
-                  <Collapse in={openFolder === folderName}>
-                    <Stack spacing="xs" ml="lg" mt="xs">
-                      {paginatedSlips.length === 0 ? (
-                        <Text size="sm" color="dimmed" align="center" p="md">
-                          Aucun bulletin disponible dans le dossier {folderName}
-                        </Text>
-                      ) : (
-                        <>
-                          {paginatedSlips
-                            .filter(fiche =>
-                              fiche.matricule.toLowerCase().includes(searchTerm.toLowerCase())
-                            )
-                            .map((fiche) => (
-                              <Paper key={fiche.id} p="sm" shadow="xs" withBorder>
-                                <Text size="sm" weight={500}>
-                                  Matricule : <strong>{fiche.matricule}</strong>
-                                </Text>
-                                <Text size="xs" color="dimmed" mt={2}>
-                                  {fiche.fileName}
-                                </Text>
-                                <Group mt="xs" spacing="xs">
-                                  <Button
-                                    size="xs"
-                                    variant="outline"
-                                    leftSection={<IconEye size={14} />}
-                                    onClick={() => handleDisplay(fiche)}
-                                  >
-                                    Afficher
-                                  </Button>
-                                  <Button
-                                    size="xs"
-                                    variant="outline"
-                                    leftSection={<IconDownload size={14} />}
-                                    onClick={() => handleDownload(fiche)}
-                                  >
-                                    Télécharger
-                                  </Button>
-                                </Group>
-                              </Paper>
-                            ))}
-                        </>
-                      )}
-
-                      {/* Pagination */}
-                      {openFolder === folderName && totalPages > 1 && (
+                </Group>
+                <Card shadow="sm" padding="md" radius="md" withBorder>
+                  {paginatedSlips.length === 0 ? (
+                    <Text size="sm" color="dimmed" align="center" p="md">
+                      Aucun bulletin disponible dans le dossier {selectedFolder}
+                    </Text>
+                  ) : (
+                    <Stack spacing="xs">
+                      {paginatedSlips
+                        .filter((fiche) =>
+                          fiche.matricule.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((fiche) => (
+                          <Paper key={fiche.id} p="sm" shadow="xs" withBorder>
+                            <Text size="sm" weight={500}>
+                              Matricule : <strong>{fiche.matricule}</strong>
+                            </Text>
+                            <Text size="xs" color="dimmed" mt={2}>
+                              {fiche.fileName}
+                            </Text>
+                            <Group mt="xs" spacing="xs">
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                leftSection={<IconEye size={14} />}
+                                onClick={() => handleDisplay(fiche)}
+                              >
+                                Afficher
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                leftSection={<IconDownload size={14} />}
+                                onClick={() => handleDownload(fiche)}
+                              >
+                                Télécharger
+                              </Button>
+                            </Group>
+                          </Paper>
+                        ))}
+                      {totalPages > 1 && (
                         <Group position="center" mt="md">
                           <Pagination
                             total={totalPages}
@@ -279,11 +300,11 @@ const PayrollVerificationPage = () => {
                         </Group>
                       )}
                     </Stack>
-                  </Collapse>
-                </Box>
-              ))
+                  )}
+                </Card>
+              </Box>
             )}
-          </Stack>
+          </Box>
         </ScrollArea>
       </Stack>
 
