@@ -12,7 +12,7 @@ import {
 
 const menuItems = [
   { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
-  { to: "/employes", label: "Employés", icon: IconUsers },
+  // { to: "/employes", label: "Employés", icon: IconUsers },
   { to: "/pdf-upload", label: "PDF Upload", icon: IconUpload },
   { to: "/verification", label: "Vérification", icon: IconFileText },
   // { to: "/historique", label: "Historique", icon: IconHistory },
