@@ -20,6 +20,7 @@ urlpatterns = [
     path('employe/<int:pk>/', views.retrieve_employe, name='retrieve_employe'), # Détail d’un employé
     path('employe/<int:pk>/update/', views.update_employe, name='update_employe'), # Mettre à jour un employé
     path('employe/<int:pk>/delete/', views.delete_employe, name='delete_employe'), # Désactiver un employé (soft delete)
+    path('employe/matricule/', views.get_employe_by_matricule, name='get_employe_by_matricule'), # Récupérer un employé par son matricule
 
     # --- FICHE DE PAIE : CRUD ---
     path('fiche-paie/create/', views.create_fiche_paie, name='create_fiche_paie'), # Créer une fiche + upload PDF

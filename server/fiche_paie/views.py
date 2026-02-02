@@ -1,6 +1,6 @@
 # Create your views here.
 from rest_framework.decorators import api_view
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
@@ -218,6 +218,39 @@ def delete_fiche_paie(request, pk):
 
     fiche.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([JWTAuthentication])
+def get_employe_by_matricule(request):
+    """
+    Récupère les informations de l'employé connecté via son matricule.
+    URL : GET /employe/by-matricule/
+    """
+    try:
+        # Récupérer l'utilisateur connecté
+        user = request.user
+        
+        # Trouver l'employé associé à cet utilisateur
+        employe = Employe.objects.get(user=user, actif=True)
+        
+        # Retourner uniquement le matricule
+        return Response(
+            {'matricule': employe.matricule},
+            status=status.HTTP_200_OK
+        )
+        
+    except Employe.DoesNotExist:
+        return Response(
+            {'error': 'Employé non trouvé ou désactivé'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Erreur serveur: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 class LoginView(APIView):
