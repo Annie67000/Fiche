@@ -27,7 +27,7 @@ export default function Home() {
       </Group>
 
       {/* 4 CARTES  */}
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="lg" mb={50}>
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 2 }} spacing="lg" mb={50}>
         {/* Employés enregistrés */}
         <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
           <div className="flex justify-around items-center gap-4">
@@ -64,7 +64,7 @@ export default function Home() {
         </Card>
 
         {/* Envois réussis */}
-        <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
+        {/* <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
           <div className="flex justify-around items-center gap-4" >
             <ActionIcon size={56} radius="xl" color="#51cf66" variant="light">
               <IconCheck size={28} />
@@ -79,10 +79,10 @@ export default function Home() {
             </Box>
           </div>
 
-        </Card>
+        </Card> */}
 
         {/* Envois échoués */}
-        <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
+        {/* <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
           <div className="flex justify-around items-center gap-4" >
             <ActionIcon size={56} radius="xl" color="#ff6b6b" variant="light">
               <IconX size={28} />
@@ -96,7 +96,7 @@ export default function Home() {
               </Text>
             </Box>
           </div>
-        </Card>
+        </Card> */}
       </SimpleGrid>
 
       {/* GRAPHIQUES */}
