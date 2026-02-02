@@ -19,6 +19,7 @@ import {
   Badge,
 } from '@mantine/core';
 import { IconSearch, IconEye, IconDownload, IconRefresh, IconChevronDown, IconChevronRight, IconFolder, IconX } from '@tabler/icons-react';
+import { employeeApi, fichePaieApi } from '../services/api';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -29,6 +30,7 @@ const PayrollVerificationPage = () => {
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [employeeMatricule, setEmployeeMatricule] = useState(null);
 
   // States for folder-based navigation
   const [selectedFolder, setSelectedFolder] = useState(null);
@@ -70,8 +72,16 @@ const PayrollVerificationPage = () => {
     if (!selectedFolder || !groupedData[selectedFolder]) {
       return [];
     }
-    return groupedData[selectedFolder];
-  }, [groupedData, selectedFolder]);
+    
+    let slips = groupedData[selectedFolder];
+    
+    // Filter by employee matricule if available
+    if (employeeMatricule) {
+      slips = slips.filter(fiche => fiche.matricule === employeeMatricule);
+    }
+    
+    return slips;
+  }, [groupedData, selectedFolder, employeeMatricule]);
 
   const totalPages = Math.ceil(currentFolderSlips.length / ITEMS_PER_PAGE);
   const paginatedSlips = currentFolderSlips.slice(
@@ -83,6 +93,16 @@ const PayrollVerificationPage = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedFolder]);
+
+  // Load employee matricule from API
+  const loadEmployeeMatricule = async () => {
+    try {
+      const response = await employeeApi.getMatricule();
+      setEmployeeMatricule(response.matricule);
+    } catch (err) {
+      console.error('Failed to load employee matricule:', err);
+    }
+  };
 
   // Load fiches from API
   const loadFichesFromAPI = async () => {
@@ -145,12 +165,9 @@ const PayrollVerificationPage = () => {
     document.body.removeChild(link);
   };
 
-  const handleVerify = (fiche, isValid) => {
-    const status = isValid ? 'correspond' : 'ne correspond pas';
-    alert(`Matricule ${fiche.matricule} : ${status}`);
-  };
 
   useEffect(() => {
+    loadEmployeeMatricule();
     loadFichesFromAPI();
   }, []);
 
