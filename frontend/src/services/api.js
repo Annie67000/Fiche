@@ -39,7 +39,7 @@ export const employeeApi = {
 
       console.log("Token : " + token )
 
-      const response = await api.get("http://localhost:8000/api/v1/employe/matricule/", {
+      const response = await api.get("http://192.168.5.151:8000/api/v1/employe/matricule/", {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

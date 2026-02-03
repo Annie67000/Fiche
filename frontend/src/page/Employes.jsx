@@ -158,7 +158,7 @@ export default function Employes() {
       formData.append('mois', dayjs(selectedMonth).format('YYYY-MM'));
       formData.append('fichier_pdf', file);
 
-      await axios.post('http://localhost:8000/api/v1/fiche-paie/create/', formData, {
+      await axios.post('http://192.168.5.15:8000/api/v1/fiche-paie/create/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
