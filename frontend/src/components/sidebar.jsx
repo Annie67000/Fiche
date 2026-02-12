@@ -21,6 +21,19 @@ const menuItems = [
 export default function Sidebar() {
   const location = useLocation();
 
+  // Get user from localStorage
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isStaff = user.is_staff || false;
+
+  // Filter menu items based on staff status
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!isStaff) {
+      // Hide Dashboard and PDF Upload for non-staff users
+      return item.to !== "/" && item.to !== "/pdf-upload";
+    }
+    return true;
+  });
+
   return (
     <Box w={280} className='bg-green-700' h="100vh" p="md" style={{ position: 'fixed', left: 0, top: 0, borderRight: '1px solid rgba(255,255,255,0.2)' }}>
       <ScrollArea h="100%"  scrollbarSize={8}>
@@ -36,7 +49,7 @@ export default function Sidebar() {
 
         {/* Menu */}
         <Box mx="xs">
-          {menuItems.map((item) => {
+          {filteredMenuItems.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.to;
 

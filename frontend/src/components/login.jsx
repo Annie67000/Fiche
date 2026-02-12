@@ -53,11 +53,12 @@ function LoginPage() {
 
         console.log(data);
 
-        const { access, refresh } = data
+        const { access, refresh, user } = data
 
         // Sauvegarde le token et l'utilisateur
         localStorage.setItem('access_token', access);
         localStorage.setItem('refresh_token', refresh);
+        localStorage.setItem('user', JSON.stringify(user));
 
         // Redirige vers la page d'accueil
         navigate('/')
