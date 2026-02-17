@@ -1,0 +1,84 @@
+{
+  "info": {
+    "name": "Pay Slip OCR Processor API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Process PDF",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/process",
+          "host": ["{{base_url}}"],
+          "path": ["process"]
+        }
+      }
+    },
+    {
+      "name": "Get Task Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/task/{{task_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["task", "{{task_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Download Results",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/download/{{task_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["download", "{{task_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Folders",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/folders",
+          "host": ["{{base_url}}"],
+          "path": ["folders"]
+        }
+      }
+    },
+    {
+      "name": "List Files in Folder",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/list_files/{{folder_name}}",
+          "host": ["{{base_url}}"],
+          "path": ["list_files", "{{folder_name}}"]
+        }
+      }
+    }
+  ]
+}
