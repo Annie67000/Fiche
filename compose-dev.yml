@@ -1,0 +1,90 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: annie_db
+      POSTGRES_USER: annie_user
+      POSTGRES_PASSWORD: annie_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U annie_user -d annie_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - annie-network
+
+  # Backend Service
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgresql://annie_user:annie_password@postgres:5432/annie_db
+      - SECRET_KEY=django-insecure-rsadyeq4lg5_1+7(n+w=0v$34lpue#m_wvv7u*q!b@eklcqg0w
+    volumes:
+      - ./server:/app
+      - ./server/media:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - annie-network
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    networks:
+      - annie-network
+
+  # PDF Separate Intelligent Service
+  pdf-separate:
+    build:
+      context: ./pdf_separate_intelligent
+      dockerfile: Dockerfile.dev
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://annie_user:annie_password@postgres:5432/annie_db
+    volumes:
+      - ./pdf_separate_intelligent:/app
+      - ./pdf_separate_intelligent/uploads:/app/uploads
+      - ./pdf_separate_intelligent/output:/app/output
+    ports:
+      - "8001:8000"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - annie-network
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    networks:
+      - annie-network
+
+volumes:
+  postgres_data:
+
+networks:
+  annie-network:
+    driver: bridge

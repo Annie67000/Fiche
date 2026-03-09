@@ -77,12 +77,33 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+import os
+from urllib.parse import urlparse
+
+# Check if DATABASE_URL is set (for Docker/production)
+database_url = os.environ.get('DATABASE_URL')
+
+if database_url:
+    # Parse the DATABASE_URL for PostgreSQL
+    result = urlparse(database_url)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': result.path[1:],  # Remove the leading /
+            'USER': result.username,
+            'PASSWORD': result.password,
+            'HOST': result.hostname,
+            'PORT': result.port,
+        }
     }
-}
+else:
+    # Fallback to SQLite for local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
