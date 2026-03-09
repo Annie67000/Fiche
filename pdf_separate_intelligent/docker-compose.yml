@@ -1,0 +1,53 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - pdf_processor_network
+    restart: always
+
+  worker:
+    build: .
+    command: celery -A app.tasks worker -l info
+    depends_on:
+      - redis
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./app:/app/app
+      - ./worker.py:/app/worker.py
+      - ./uploads:/app/uploads
+      - ./output:/app/output
+    networks:
+      - pdf_processor_network
+    restart: always
+
+  api:
+    build: .
+    ports:
+      - "8001:8000"
+    depends_on:
+      - redis
+      - worker
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./app:/app/app
+      - ./run.py:/app/run.py
+      - ./uploads:/app/uploads
+      - ./output:/app/output
+      - ./debug_extraction.py:/app/debug_extraction.py
+    networks:
+      - pdf_processor_network
+    restart: always
+
+volumes:
+  redis_data:
+
+networks:
+  pdf_processor_network:
+    driver: bridge

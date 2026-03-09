@@ -1,7 +1,3 @@
-.venv
-*.pdf
-*.pyc
-.env
 venv
 __pycache__
 output/
