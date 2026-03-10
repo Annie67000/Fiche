@@ -11,7 +11,7 @@ import { Box } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';        // ← AJOUTÉ
 import LoginPage from './components/login.jsx';
 import Sidebar from './components/sidebar.jsx';  // ← vérifie que ce chemin est bon
-import PayrollVerificationPage from './components/PayrollVerificationPage.jsx';
+import PayrollVerificationPage from './components/payroll-verification.jsx';
 import Home from './page/home.jsx';
 import Employes from './page/Employes.jsx';
 import { PaySlip } from './components/pay-slip.jsx';
