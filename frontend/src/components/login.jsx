@@ -30,10 +30,10 @@ function LoginPage() {
       valid = false;
     }
 
-    if (formData.password.length < 6) {
-      newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères';
-      valid = false;
-    }
+    // if (formData.password.length < 6) {
+    //   newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères';
+    //   valid = false;
+    // }
 
     setErrors(newErrors);
     return valid;
@@ -44,7 +44,7 @@ function LoginPage() {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        const response = await axios.post('/api/v1/login/', {
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/v1/login/`, {
           username: formData.username,
           password: formData.password,
         });

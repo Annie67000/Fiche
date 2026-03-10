@@ -2,6 +2,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
+    container_name: payslip_postgres
     environment:
       POSTGRES_DB: annie_db
       POSTGRES_USER: annie_user
@@ -17,13 +18,14 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - annie-network
+      - payslip_network
 
   # Backend Service
   backend:
     build:
       context: ./server
       dockerfile: Dockerfile.dev
+    container_name: payslip_backend
     environment:
       - DEBUG=1
       - DATABASE_URL=postgresql://annie_user:annie_password@postgres:5432/annie_db
@@ -37,13 +39,14 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - annie-network
+      - payslip_network
 
   # Frontend Service
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+    container_name: payslip_frontend
     environment:
       - VITE_API_URL=http://localhost:8000
     volumes:
@@ -52,13 +55,14 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - annie-network
+      - payslip_network
 
   # PDF Separate Intelligent Service
   pdf-separate:
     build:
       context: ./pdf_separate_intelligent
       dockerfile: Dockerfile.dev
+    container_name: payslip_pdf_separate
     environment:
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=postgresql://annie_user:annie_password@postgres:5432/annie_db
@@ -72,7 +76,7 @@ services:
       - redis
       - postgres
     networks:
-      - annie-network
+      - payslip_network
 
   # Redis for Celery
   redis:
@@ -80,11 +84,11 @@ services:
     ports:
       - "6380:6379"
     networks:
-      - annie-network
+      - payslip_network
 
 volumes:
   postgres_data:
 
 networks:
-  annie-network:
+  payslip_network:
     driver: bridge

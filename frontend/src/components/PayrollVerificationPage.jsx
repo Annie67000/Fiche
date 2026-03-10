@@ -89,7 +89,7 @@ const PayrollVerificationPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:8001/folders');
+      const response = await fetch(`${import.meta.env.VITE_PDF_PROCESSOR_URL}/folders`);
       if (!response.ok) throw new Error('Erreur lors de la récupération des dossiers');
       const data = await response.json();
       const folders = data.folders;
@@ -99,7 +99,7 @@ const PayrollVerificationPage = () => {
 
       for (const folderPath of folders) {
         const folderName = folderPath.split('/').pop();
-        const filesResponse = await fetch(`http://localhost:8001/list_files/${folderName}`);
+        const filesResponse = await fetch(`${import.meta.env.VITE_PDF_PROCESSOR_URL}/list_files/${folderName}`);
         if (!filesResponse.ok) continue;
         const filesData = await filesResponse.json();
         const files = filesData.files;
@@ -112,7 +112,7 @@ const PayrollVerificationPage = () => {
             matricule: extractMatricule(baseName),
             fileName: relPath,
             folderName: folderName,
-            url: `http://localhost:8001/media/${folderName}/${relPath}`,
+            url: `${import.meta.env.VITE_PDF_PROCESSOR_URL}/media/${folderName}/${relPath}`,
           });
         }
       }

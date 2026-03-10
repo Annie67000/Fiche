@@ -7,7 +7,7 @@ import { X } from 'lucide-react';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
-const API_BASE_URL = 'http://localhost:8001';
+const API_BASE_URL = import.meta.env.VITE_PDF_PROCESSOR_URL;
 
 const PdfUpload = () => {
   const [selectedFile, setSelectedFile] = useState(null);
