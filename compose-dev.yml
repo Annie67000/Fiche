@@ -74,13 +74,33 @@ services:
       - "8001:8000"
     depends_on:
       - redis
-      - postgres
+      - worker
     networks:
       - payslip_network
+
+  worker:
+    build: 
+      context: ./pdf_separate_intelligent
+      dockerfile: Dockerfile.dev
+    container_name: payslip_worker
+    command: celery -A app.tasks worker -l info
+    depends_on:
+      - redis
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./pdf_separate_intelligent:/app
+      - ./pdf_separate_intelligent/worker.py:/app/worker.py
+      - ./pdf_separate_intelligent/output:/app/output
+      - ./pdf_separate_intelligent/uploads:/app/uploads
+    networks:
+      - payslip_network
+    restart: always
 
   # Redis for Celery
   redis:
     image: redis:7-alpine
+    container_name: payslip_redis
     ports:
       - "6380:6379"
     networks:

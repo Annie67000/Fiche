@@ -94,7 +94,7 @@ const PdfUpload = () => {
         setLoading(false);
         alert('Erreur lors de la vérification du statut de la tâche. Veuillez réessayer.');
       }
-    }, 100); // Poll every 2 seconds
+    }, 10000); // Poll every 10 seconds
   };
 
   return (
