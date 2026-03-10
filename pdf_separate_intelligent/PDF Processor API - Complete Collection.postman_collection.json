@@ -1,0 +1,865 @@
+{
+  "info": {
+    "_postman_id": "d98f865d-e49b-41f3-a4a3-da3d2a2918a8",
+    "name": "PDF Processor API - Complete Collection",
+    "description": "Complete Postman collection for testing the PDF Processor API with OCR and encryption capabilities.\n\nThis API processes PDF pay slips by:\n1. Splitting PDFs into individual pages\n2. Using OCR to extract employee information (matricule, nom, prénom)\n3. Renaming files based on extracted data and period\n4. Encrypting all processed files for security\n5. Organizing files by employee ID in folder structure\n\nBase URL: http://localhost:8001\n\nWorkflow:\n1. Upload PDF via POST /process\n2. Poll GET /task/{task_id} until status is 'Completed'\n3. Get folder structure via GET /folders or GET /download/{task_id}\n4. List files in specific employee folder via GET /list_files/{employee_id}\n5. Access encrypted files via GET /secure_file/{employee_id}/{filename}\n\nSecurity: All processed files are encrypted (.enc extension) and can only be accessed through the secure_file endpoint which decrypts them on-the-fly.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "21858758"
+  },
+  "item": [
+    {
+      "name": "📁 Setup & Configuration",
+      "item": [
+        {
+          "name": "Set Base URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "localhost:8001/",
+              "host": [
+                "localhost"
+              ],
+              "port": "8001",
+              "path": [
+                ""
+              ]
+            },
+            "description": "Test connection to the API server"
+          },
+          "response": []
+        },
+        {
+          "name": "Environment Variables Setup",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Set default environment variables if not already set",
+                  "if (!pm.environment.get('base_url')) {",
+                  "    pm.environment.set('base_url', 'http://localhost:8001');",
+                  "}",
+                  "if (!pm.environment.get('task_id')) {",
+                  "    pm.environment.set('task_id', '');",
+                  "}",
+                  "if (!pm.environment.get('employee_id')) {",
+                  "    pm.environment.set('employee_id', '');",
+                  "}",
+                  "if (!pm.environment.get('encrypted_filename')) {",
+                  "    pm.environment.set('encrypted_filename', '');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "Initialize environment variables for the collection"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📤 File Processing",
+      "item": [
+        {
+          "name": "Upload PDF for Processing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "uuid": "45b5e196-7835-4336-a15d-d14b229f7fc8",
+                  "src": "/home/dell/Projet RH/annie/Fiche/pdf_separate_intelligent/dec_2026.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/process",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "process"
+              ]
+            },
+            "description": "Upload a PDF file to be split into pages and renamed via OCR. The file will be encrypted during processing. Returns a task_id for tracking progress."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "multipart/form-data"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "uuid": "45b5e196-7835-4336-a15d-d14b229f7fc8",
+                      "src": "/home/dell/Projet RH/annie/Fiche/pdf_separate_intelligent/dec_2026.pdf"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/process",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "process"
+                  ]
+                },
+                "description": "Upload a PDF file to be split into pages and renamed via OCR. The file will be encrypted during processing. Returns a task_id for tracking progress."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"task_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"status\": \"Task started\"\n}"
+            },
+            {
+              "name": "Error Response - Invalid File Type",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "multipart/form-data"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "uuid": "45b5e196-7835-4336-a15d-d14b229f7fc8",
+                      "src": "/home/dell/Projet RH/annie/Fiche/pdf_separate_intelligent/dec_2026.pdf"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/process",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "process"
+                  ]
+                },
+                "description": "Upload a PDF file to be split into pages and renamed via OCR. The file will be encrypted during processing. Returns a task_id for tracking progress."
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Only PDF files are allowed\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Check Task Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/task/{{task_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "task",
+                "{{task_id}}"
+              ]
+            },
+            "description": "Check the status of a processing task. Replace {{task_id}} with the actual task ID from the upload response.\n\nStatus values:\n- Pending: Task not yet started\n- En cours: Processing in progress (includes progress details)\n- Completed: Processing finished successfully\n- Failed: Processing failed (includes error details)"
+          },
+          "response": [
+            {
+              "name": "Pending Status",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/task/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "task",
+                    "{{task_id}}"
+                  ]
+                },
+                "description": "Check the status of a processing task. Replace {{task_id}} with the actual task ID from the upload response.\n\nStatus values:\n- Pending: Task not yet started\n- En cours: Processing in progress (includes progress details)\n- Completed: Processing finished successfully\n- Failed: Processing failed (includes error details)"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"task_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"status\": \"Pending\"\n}"
+            },
+            {
+              "name": "Processing Status",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/task/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "task",
+                    "{{task_id}}"
+                  ]
+                },
+                "description": "Check the status of a processing task. Replace {{task_id}} with the actual task ID from the upload response.\n\nStatus values:\n- Pending: Task not yet started\n- En cours: Processing in progress (includes progress details)\n- Completed: Processing finished successfully\n- Failed: Processing failed (includes error details)"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"task_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"status\": \"En cours\",\n  \"detail\": \"Splitting PDF into pages\",\n  \"progress\": \"1/5 pages processed\",\n  \"current\": 1,\n  \"total\": 5\n}"
+            },
+            {
+              "name": "Completed Status",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/task/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "task",
+                    "{{task_id}}"
+                  ]
+                },
+                "description": "Check the status of a processing task. Replace {{task_id}} with the actual task ID from the upload response.\n\nStatus values:\n- Pending: Task not yet started\n- En cours: Processing in progress (includes progress details)\n- Completed: Processing finished successfully\n- Failed: Processing failed (includes error details)"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"task_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"status\": \"Completed\",\n  \"output_dir\": \"/app/output/550e8400-e29b-41d4-a716-446655440000\",\n  \"file_count\": 5,\n  \"employee_count\": 3\n}"
+            },
+            {
+              "name": "Failed Status",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/task/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "task",
+                    "{{task_id}}"
+                  ]
+                },
+                "description": "Check the status of a processing task. Replace {{task_id}} with the actual task ID from the upload response.\n\nStatus values:\n- Pending: Task not yet started\n- En cours: Processing in progress (includes progress details)\n- Completed: Processing finished successfully\n- Failed: Processing failed (includes error details)"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"task_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"status\": \"Failed\",\n  \"error\": \"OCR extraction failed\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Download Processed Files Structure",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/download/{{task_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "download",
+                "{{task_id}}"
+              ]
+            },
+            "description": "Get the processed pay slips organized by employee ID as folder structure. This endpoint returns the folder structure and file list, but files are encrypted and must be accessed via /secure_file endpoint."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/download/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "download",
+                    "{{task_id}}"
+                  ]
+                },
+                "description": "Get the processed pay slips organized by employee ID as folder structure. This endpoint returns the folder structure and file list, but files are encrypted and must be accessed via /secure_file endpoint."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"task_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"output_dir\": \"/app/output/550e8400-e29b-41d4-a716-446655440000\",\n  \"folder_structure\": {\n    \"EMP001\": [\n      \"EMP001_2024-01.pdf\",\n      \"EMP001_2024-02.pdf\"\n    ],\n    \"EMP002\": [\n      \"EMP002_2024-01.pdf\"\n    ],\n    \"EMP003\": [\n      \"EMP003_2024-01.pdf\",\n      \"EMP003_2024-02.pdf\",\n      \"EMP003_2024-03.pdf\"\n    ]\n  },\n  \"total_folders\": 3,\n  \"total_files\": 6\n}"
+            },
+            {
+              "name": "Error Response - Task Not Completed",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/download/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "download",
+                    "{{task_id}}"
+                  ]
+                },
+                "description": "Get the processed pay slips organized by employee ID as folder structure. This endpoint returns the folder structure and file list, but files are encrypted and must be accessed via /secure_file endpoint."
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Task is not completed or failed\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📁 File Management",
+      "item": [
+        {
+          "name": "Get All Folders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/folders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "folders"
+              ]
+            },
+            "description": "Get the list of all folder paths in the output directory organized by employee ID. This provides an overview of all processed employee data."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/folders",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "folders"
+                  ]
+                },
+                "description": "Get the list of all folder paths in the output directory organized by employee ID. This provides an overview of all processed employee data."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"folders\": [\n    \"C:/Projet/projet/pdf_separate_intelligent/output/EMP001\",\n    \"C:/Projet/projet/pdf_separate_intelligent/output/EMP002\",\n    \"C:/Projet/projet/pdf_separate_intelligent/output/EMP003\"\n  ]\n}"
+            },
+            {
+              "name": "No Folders Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/folders",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "folders"
+                  ]
+                },
+                "description": "Get the list of all folder paths in the output directory organized by employee ID. This provides an overview of all processed employee data."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"folders\": []\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Files in Employee Folder",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/list_files/{{employee_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list_files",
+                "{{employee_id}}"
+              ]
+            },
+            "description": "Get the list of encrypted PDF files (.enc) in a specific employee folder recursively. Replace {{employee_id}} with the actual employee ID (e.g., EMP001, EMP002)."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/list_files/{{employee_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "list_files",
+                    "{{employee_id}}"
+                  ]
+                },
+                "description": "Get the list of encrypted PDF files (.enc) in a specific employee folder recursively. Replace {{employee_id}} with the actual employee ID (e.g., EMP001, EMP002)."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"files\": [\n    \"EMP001_2024-01.pdf\",\n    \"EMP001_2024-02.pdf\"\n  ]\n}"
+            },
+            {
+              "name": "No Files Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/list_files/{{employee_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "list_files",
+                    "{{employee_id}}"
+                  ]
+                },
+                "description": "Get the list of encrypted PDF files (.enc) in a specific employee folder recursively. Replace {{employee_id}} with the actual employee ID (e.g., EMP001, EMP002)."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"files\": []\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Secure File (Decrypt on-the-fly)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/secure_file/{{employee_id}}/{{encrypted_filename}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "secure_file",
+                "{{employee_id}}",
+                "{{encrypted_filename}}"
+              ]
+            },
+            "description": "Serve an encrypted PDF file by decrypting it on the fly. Replace {{employee_id}} with the employee ID and {{encrypted_filename}} with the encrypted filename (.enc extension). The file will be decrypted and served as PDF.\n\nIMPORTANT: This endpoint decrypts files on-the-fly for secure access. The actual files on disk remain encrypted."
+          },
+          "response": [
+            {
+              "name": "Success Response - PDF File",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/secure_file/{{employee_id}}/{{encrypted_filename}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "secure_file",
+                    "{{employee_id}}",
+                    "{{encrypted_filename}}"
+                  ]
+                },
+                "description": "Serve an encrypted PDF file by decrypting it on the fly. Replace {{employee_id}} with the employee ID and {{encrypted_filename}} with the encrypted filename (.enc extension). The file will be decrypted and served as PDF.\n\nIMPORTANT: This endpoint decrypts files on-the-fly for secure access. The actual files on disk remain encrypted."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/pdf"
+                },
+                {
+                  "key": "Content-Disposition",
+                  "value": "inline; filename=EMP001_2024-01.pdf"
+                }
+              ],
+              "cookie": [],
+              "body": "(Binary PDF content)"
+            },
+            {
+              "name": "Error Response - File Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/secure_file/{{employee_id}}/{{encrypted_filename}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "secure_file",
+                    "{{employee_id}}",
+                    "{{encrypted_filename}}"
+                  ]
+                },
+                "description": "Serve an encrypted PDF file by decrypting it on the fly. Replace {{employee_id}} with the employee ID and {{encrypted_filename}} with the encrypted filename (.enc extension). The file will be decrypted and served as PDF.\n\nIMPORTANT: This endpoint decrypts files on-the-fly for secure access. The actual files on disk remain encrypted."
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"detail\": \"File not found\"\n}"
+            },
+            {
+              "name": "Error Response - Decryption Failed",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/secure_file/{{employee_id}}/{{encrypted_filename}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "secure_file",
+                    "{{employee_id}}",
+                    "{{encrypted_filename}}"
+                  ]
+                },
+                "description": "Serve an encrypted PDF file by decrypting it on the fly. Replace {{employee_id}} with the employee ID and {{encrypted_filename}} with the encrypted filename (.enc extension). The file will be decrypted and served as PDF.\n\nIMPORTANT: This endpoint decrypts files on-the-fly for secure access. The actual files on disk remain encrypted."
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"detail\": \"Error decrypting file: Invalid encryption key\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔗 Workflow Examples",
+      "item": [
+        {
+          "name": "Complete Processing Workflow",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Example workflow test script",
+                  "pm.test(\"Task started successfully\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(pm.response.json()).to.have.property('task_id');",
+                  "    pm.environment.set(\"task_id\", pm.response.json().task_id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Example PDF file for complete workflow testing",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/process",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "process"
+              ]
+            },
+            "description": "Complete workflow example: Upload PDF → Get task_id → Poll status → Download structure → Access files"
+          },
+          "response": []
+        },
+        {
+          "name": "Batch Processing Example",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Large PDF with multiple employee pay slips for batch processing",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/process",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "process"
+              ]
+            },
+            "description": "Example of processing a large PDF file containing multiple employee pay slips. The API will automatically split, OCR, and organize by employee ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "⚠️ Error Handling",
+      "item": [
+        {
+          "name": "Invalid File Type Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Non-PDF file to test error handling",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/process",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "process"
+              ]
+            },
+            "description": "Test error handling for invalid file types (non-PDF files)"
+          },
+          "response": []
+        },
+        {
+          "name": "Non-existent Task Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/task/invalid-task-id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "task",
+                "invalid-task-id"
+              ]
+            },
+            "description": "Test status check for non-existent task ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Non-existent Employee Folder",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/list_files/INVALID_EMPLOYEE",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list_files",
+                "INVALID_EMPLOYEE"
+              ]
+            },
+            "description": "Test file listing for non-existent employee folder"
+          },
+          "response": []
+        },
+        {
+          "name": "Non-existent Encrypted File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/secure_file/EMP001/nonexistent.pdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "secure_file",
+                "EMP001",
+                "nonexistent.pdf"
+              ]
+            },
+            "description": "Test secure file access for non-existent encrypted file"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Collection-level pre-request script",
+          "// This runs before every request in the collection"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Collection-level test script",
+          "// This runs after every request in the collection"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8001",
+      "type": "string",
+      "description": "Base URL for the PDF Processor API"
+    },
+    {
+      "key": "task_id",
+      "value": "",
+      "type": "string",
+      "description": "Task ID returned from /process endpoint"
+    },
+    {
+      "key": "employee_id",
+      "value": "",
+      "type": "string",
+      "description": "Employee ID (e.g., EMP001, EMP002) from folder structure"
+    },
+    {
+      "key": "encrypted_filename",
+      "value": "",
+      "type": "string",
+      "description": "Encrypted filename with .enc extension"
+    }
+  ]
+}

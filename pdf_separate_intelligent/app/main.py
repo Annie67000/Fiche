@@ -171,8 +171,22 @@ async def get_secure_file(folder_name: str, file_name: str):
     else:
         encrypted_filename = file_name
 
-    file_path = os.path.join("output", folder_name, encrypted_filename)
-    if not os.path.exists(file_path) or not encrypted_filename.lower().endswith('.enc'):
+    # Check if the file is in a subdirectory (employee ID folder)
+    folder_path = os.path.join("output", folder_name)
+    if not os.path.exists(folder_path):
+        raise HTTPException(status_code=404, detail="Folder not found")
+
+    # Look for the encrypted file in the folder structure
+    file_path = None
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file == encrypted_filename:
+                file_path = os.path.join(root, file)
+                break
+        if file_path:
+            break
+
+    if not file_path or not encrypted_filename.lower().endswith('.enc'):
         raise HTTPException(status_code=404, detail="File not found")
 
     try:
