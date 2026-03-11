@@ -63,6 +63,7 @@ const PayrollVerificationPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState('grid');
   const [statsExpanded, setStatsExpanded] = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const extractMatricule = useCallback((fileName) => {
     const match = fileName.match(/^(\d+)_/);
@@ -196,6 +197,7 @@ const PayrollVerificationPage = () => {
   }, [getSecureFileUrl, getAuthHeaders]);
 
   const handleDownload = useCallback((fiche) => {
+    setDownloadingId(fiche.id);
     const url = getSecureFileUrl(fiche);
     
     fetch(url, { headers: getAuthHeaders() })
@@ -220,6 +222,9 @@ const PayrollVerificationPage = () => {
       })
       .catch(err => {
         setError(err.message);
+      })
+      .finally(() => {
+        setDownloadingId(null);
       });
   }, [getSecureFileUrl, getAuthHeaders]);
 
@@ -419,10 +424,11 @@ const PayrollVerificationPage = () => {
                               variant="light" 
                               color="blue" 
                               size="md"
-                              leftSection={<IconDownload size={18} />}
+                              leftSection={downloadingId === fiche.id ? <Loader size={14} color="blue" /> : <IconDownload size={18} />}
                               onClick={() => handleDownload(fiche)}
+                              loading={downloadingId === fiche.id}
                             >
-                              Télécharger
+                              {downloadingId === fiche.id ? 'Chargement...' : 'Télécharger'}
                             </Button>
                           </Group>
                         </Stack>
@@ -477,13 +483,14 @@ const PayrollVerificationPage = () => {
                               <IconEye size={16} />
                             </ActionIcon>
                           </Tooltip> */}
-                          <Tooltip label="Télécharger">
+                          <Tooltip label={downloadingId === fiche.id ? 'Chargement...' : 'Télécharger'}>
                             <ActionIcon 
                               variant="light" 
                               color="blue"
                               onClick={() => handleDownload(fiche)}
+                              loading={downloadingId === fiche.id}
                             >
-                              <IconDownload size={16} />
+                              {downloadingId === fiche.id ? <Loader size={14} color="blue" /> : <IconDownload size={16} />}
                             </ActionIcon>
                           </Tooltip>
                         </Group>
