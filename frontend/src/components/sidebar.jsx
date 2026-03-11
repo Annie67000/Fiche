@@ -1,5 +1,5 @@
 import { NavLink, Box, Text, Avatar, Divider, Button, ScrollArea } from '@mantine/core';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   IconLayoutDashboard,
   IconUsers,
@@ -20,6 +20,13 @@ const menuItems = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    navigate('/login');
+  };
 
   return (
     <Box w={280} className='bg-green-700' h="100vh" p="md" style={{ position: 'fixed', left: 0, top: 0, borderRight: '1px solid rgba(255,255,255,0.2)' }}>
@@ -57,13 +64,13 @@ export default function Sidebar() {
         {/* Déconnexion */}
         <Box>
           <Divider color="white" opacity={0.2} my="lg" />
-          <Link
-            to={'/login'}
-            className={`flex items-center gap-2 px-6 py-4 mb-1 rounded-md text-md text-white hover:bg-red-500 hover:bg-opacity-10`}
+          <button
+            onClick={handleLogout}
+            className={`flex items-center gap-2 px-6 py-4 mb-1 rounded-md text-md text-white hover:bg-red-500 hover:bg-opacity-10 w-full`}
           >
             <IconLogout size={24} />
             <span className=''>Déconnexion</span>
-          </Link>
+          </button>
         </Box>
       </ScrollArea>
     </Box>
