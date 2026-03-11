@@ -138,29 +138,75 @@ const PayrollVerificationPage = () => {
     return `${API_URL}/secure_file/${fiche.folderName}/${encodeURIComponent(cleanFileName)}`;
   }, []);
 
-  const handleFolderClick = useCallback((folderName) => {
-    setSelectedFolder(prev => prev === folderName ? null : folderName);
-    setCurrentPage(1);
+  const getAuthHeaders = useCallback(() => {
+    const token = localStorage.getItem('access_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
 
   const handleDisplay = useCallback((fiche) => {
-    setSelectedPdf(getSecureFileUrl(fiche));
-    setPdfModalOpen(true);
-  }, [getSecureFileUrl]);
+    setPdfLoading(true);
+    const url = getSecureFileUrl(fiche);
+    
+    fetch(url, { headers: getAuthHeaders() })
+      .then(response => {
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            throw new Error('Non autorisé. Veuillez vous connecter.');
+          }
+          throw new Error('Erreur lors du chargement du PDF');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        setSelectedPdf(blobUrl);
+        setPdfModalOpen(true);
+      })
+      .catch(err => {
+        setError(err.message);
+        setPdfLoading(false);
+      });
+  }, [getSecureFileUrl, getAuthHeaders]);
 
   const handleDownload = useCallback((fiche) => {
     const url = getSecureFileUrl(fiche);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fiche.fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [getSecureFileUrl]);
+    
+    fetch(url, { headers: getAuthHeaders() })
+      .then(response => {
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            throw new Error('Non autorisé. Veuillez vous connecter.');
+          }
+          throw new Error('Erreur lors du téléchargement');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fiche.fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      })
+      .catch(err => {
+        setError(err.message);
+      });
+  }, [getSecureFileUrl, getAuthHeaders]);
 
   const handleClosePdfModal = useCallback(() => {
+    if (selectedPdf && selectedPdf.startsWith('blob:')) {
+      URL.revokeObjectURL(selectedPdf);
+    }
     setPdfModalOpen(false);
     setSelectedPdf(null);
+  }, [selectedPdf]);
+
+  const handleFolderClick = useCallback((folderName) => {
+    setSelectedFolder(prev => prev === folderName ? null : folderName);
+    setCurrentPage(1);
   }, []);
 
   useEffect(() => {
@@ -304,14 +350,14 @@ const PayrollVerificationPage = () => {
                             </Text>
                           </Box>
                           <Group gap="xs" wrap="nowrap">
-                            <Button
+                            {/* <Button
                               size="xs"
                               variant="light"
                               leftSection={<IconEye size={14} />}
                               onClick={() => handleDisplay(fiche)}
                             >
                               Afficher
-                            </Button>
+                            </Button> */}
                             <Button
                               size="xs"
                               variant="light"

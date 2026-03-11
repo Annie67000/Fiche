@@ -66,6 +66,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=postgresql://annie_user:annie_password@postgres:5432/annie_db
+      - SKIP_AUTH=false
     volumes:
       - ./pdf_separate_intelligent:/app
       - ./pdf_separate_intelligent/uploads:/app/uploads

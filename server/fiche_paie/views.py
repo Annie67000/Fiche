@@ -299,3 +299,22 @@ class LoginView(APIView):
                 'last_name': user.last_name,
             }
         })
+
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+    """
+    Get current authenticated user info
+    URL : GET /api/v1/me/
+    """
+    user = request.user
+    return Response({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'is_staff': user.is_staff,
+        'is_superuser': user.is_superuser,
+    })

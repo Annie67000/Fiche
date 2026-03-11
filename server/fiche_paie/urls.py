@@ -29,9 +29,10 @@ urlpatterns = [
     path('fiche-paie/<int:pk>/update/', views.update_fiche_paie, name='update_fiche_paie'), # Modifier une fiche (PDF optionnel)
     path('fiche-paie/<int:pk>/delete/', views.delete_fiche_paie, name='delete_fiche_paie'), # Supprimer une fiche + fichier PDF
 ]
-    #Nouveau
+    # Nouveau
 urlpatterns += [
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', logout_views.logout_view, name='logout'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('me/', views.get_current_user, name='current_user'),
 ]

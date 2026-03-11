@@ -1,13 +1,53 @@
-﻿from fastapi import FastAPI, File, UploadFile, HTTPException
+﻿from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import tempfile
 import os
+import httpx
+import jwt
 from .tasks import process_pdf_task
 from .crypto import encrypt_file, decrypt_to_memory
 
 app = FastAPI(title="Pay Slip OCR Processor API")
+security = HTTPBearer()
+
+DJANGO_API_URL = os.getenv("DJANGO_API_URL", "http://localhost:8000")
+JWT_SECRET = os.getenv("JWT_SECRET", "django-insecure-rsadyeq4lg5_1+7(n+w=0v$34lpue#m_wvv7u*q!b@eklcqg0w")
+
+async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    
+    # Try Django API first
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                f"{DJANGO_API_URL}/api/v1/me/",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10.0
+            )
+            if response.status_code == 200:
+                user_data = response.json()
+                return user_data
+            # If Django fails, try local decode
+        except Exception:
+            pass
+    
+    # Fallback: try local decode (for development/testing)
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256", "HS384", "HS512", "RS256"])
+        if payload.get("token_type") == "access":
+            return {"user_id": payload.get("user_id"), "is_staff": True}
+    except Exception:
+        pass
+    
+    # If all fails, raise error
+    raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+async def verify_admin_role(user_data: dict):
+    if not user_data.get("is_staff", False):
+        raise HTTPException(status_code=403, detail="Admin role required")
 
 # Add CORS middleware
 app.add_middleware(
@@ -159,12 +199,17 @@ async def list_files_in_folder(folder_name: str):
                 pdf_files.append(rel_path)
     return {"files": pdf_files}
 
-@app.get("/secure_file/{folder_name}/{file_name}")
-async def get_secure_file(folder_name: str, file_name: str):
+@app.get("/secure_file/{folder_name}/{folder_path:path}")
+async def get_secure_file(folder_name: str, folder_path: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Serve an encrypted PDF file by decrypting it on the fly
-    TODO: Add authentication to ensure only logged-in users can access
+    Requires JWT authentication
     """
+    user_data = await verify_token(credentials)
+    
+    # folder_path now contains the file path from the URL
+    file_name = folder_path
+    
     # Convert .pdf extension to .enc for the actual file path
     if file_name.lower().endswith('.pdf'):
         encrypted_filename = os.path.splitext(file_name)[0] + '.enc'
@@ -172,13 +217,13 @@ async def get_secure_file(folder_name: str, file_name: str):
         encrypted_filename = file_name
 
     # Check if the file is in a subdirectory (employee ID folder)
-    folder_path = os.path.join("output", folder_name)
-    if not os.path.exists(folder_path):
+    base_folder_path = os.path.join("output", folder_name)
+    if not os.path.exists(base_folder_path):
         raise HTTPException(status_code=404, detail="Folder not found")
 
     # Look for the encrypted file in the folder structure
     file_path = None
-    for root, dirs, files in os.walk(folder_path):
+    for root, dirs, files in os.walk(base_folder_path):
         for file in files:
             if file == encrypted_filename:
                 file_path = os.path.join(root, file)
