@@ -7,7 +7,6 @@ import {
   Button,
   Group,
   Alert,
-  Divider,
   Paper,
   Modal,
   Stack,
@@ -17,6 +16,14 @@ import {
   Badge,
   LoadingOverlay,
   Pagination,
+  ThemeIcon,
+  Title,
+  SegmentedControl,
+  Tooltip,
+  ActionIcon,
+  Collapse,
+  RingProgress,
+  SimpleGrid,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { 
@@ -28,9 +35,19 @@ import {
   IconX,
   IconFile,
   IconAlertCircle,
+  IconFileTypePdf,
+  IconLayoutGrid,
+  IconList,
+  IconChevronDown,
+  IconChevronUp,
+  IconCheck,
+  IconClock,
+  IconStack,
 } from '@tabler/icons-react';
 
-const ITEMS_PER_PAGE = 10;
+import PayrollHeader from './payroll-header';
+
+const ITEMS_PER_PAGE = 6;
 const API_URL = import.meta.env.VITE_PDF_PROCESSOR_URL;
 
 const PayrollVerificationPage = () => {
@@ -44,6 +61,8 @@ const PayrollVerificationPage = () => {
   const [loading, setLoading] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState('grid');
+  const [statsExpanded, setStatsExpanded] = useState(true);
 
   const extractMatricule = useCallback((fileName) => {
     const match = fileName.match(/^(\d+)_/);
@@ -81,7 +100,8 @@ const PayrollVerificationPage = () => {
     if (!debouncedSearch) return currentFolderSlips;
     const search = debouncedSearch.toLowerCase();
     return currentFolderSlips.filter(fiche => 
-      fiche.matricule.toLowerCase().includes(search)
+      fiche.matricule.toLowerCase().includes(search) ||
+      fiche.fileName.toLowerCase().includes(search)
     );
   }, [currentFolderSlips, debouncedSearch]);
 
@@ -90,6 +110,13 @@ const PayrollVerificationPage = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const stats = useMemo(() => {
+    const totalFolders = Object.keys(groupedData).length;
+    const totalFiches = fiches.length;
+    const avgPerFolder = totalFolders > 0 ? Math.round(totalFiches / totalFolders) : 0;
+    return { totalFolders, totalFiches, avgPerFolder };
+  }, [groupedData, fiches]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -214,98 +241,129 @@ const PayrollVerificationPage = () => {
   }, [loadFichesFromAPI]);
 
   return (
-    <Box p="xl" style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <LoadingOverlay visible={loading} overlayProps={{ blur: 2 }} />
+    <Box style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', backgroundColor: '#f8fafc' }}>
+      <LoadingOverlay visible={loading} overlayProps={{ blur: 3, opacity: 0.5 }} />
       
-      {/* Fixed Header */}
-      <Box mb="md">
-        <Text size="xl" weight={700} align="center">
-          Vérification des Fiches de Paie
-        </Text>
-        <Divider my="sm" />
-        
-        <Group position="center" mb="md">
-          <Button
-            leftSection={<IconRefresh size={16} />}
-            onClick={loadFichesFromAPI}
-            loading={loading}
-          >
-            Recharger les bulletins
-          </Button>
-        </Group>
+      {/* Header */}
+      {/* <PayrollHeader 
+        loading={loading} 
+        loadFichesFromAPI={loadFichesFromAPI} 
+        stats={stats} 
+        statsExpanded={statsExpanded} 
+        setStatsExpanded={setStatsExpanded} 
+      /> */}
 
-        {fiches.length > 0 && (
-          <Box w="100%" mx="auto" style={{ maxWidth: '500px' }}>
+      {/* Search & Controls */}
+      <Box px="lg" py="md" bg="white" style={{ borderBottom: '1px solid #e2e8f0' }}>
+        <Group justify="space-between">
+          <Group gap="md">
             <TextInput
-              placeholder="Rechercher par matricule"
-              leftSection={<IconSearch size={16} />}
+              placeholder="Rechercher par matricule ou nom de fichier..."
+              leftSection={<IconSearch size={18} />}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               clearable
+              w={350}
+              styles={{
+                input: {
+                  borderRadius: 8,
+                  '&:focus': {
+                    borderColor: '#3b82f6',
+                  }
+                }
+              }}
             />
-          </Box>
-        )}
+            {selectedFolder && (
+              <Badge size="lg" variant="light" color="blue" radius="sm">
+                {filteredSlips.length} résultat{filteredSlips.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+          </Group>
+          <SegmentedControl
+            value={viewMode}
+            onChange={setViewMode}
+            data={[
+              { label: <Group gap={4}><IconLayoutGrid size={16} /></Group>, value: 'grid' },
+              { label: <Group gap={4}><IconList size={16} /></Group>, value: 'list' },
+            ]}
+            size="sm"
+          />
+        </Group>
+      </Box>
 
-        {error && (
+      {error && (
+        <Box px="lg" pt="md">
           <Alert color="red" icon={<IconAlertCircle size={16} />} title="Erreur" onClose={() => setError(null)} withCloseButton>
             {error}
           </Alert>
-        )}
-      </Box>
+        </Box>
+      )}
 
       {/* Scrollable Content */}
-      <ScrollArea style={{ flex: 1 }} scrollbarSize={8}>
+      <ScrollArea scrollbarSize={8} p="lg">
         <Box>
           {loading && fiches.length === 0 ? (
-            <Group position="center" mt="xl">
-              <Loader size="lg" />
-              <Text>Chargement des bulletins...</Text>
+            <Group position="center" mt="4xl" gap="md">
+              <Loader size="lg" color="blue" />
+              <Text c="dimmed">Chargement des bulletins...</Text>
             </Group>
           ) : Object.keys(groupedData).length === 0 ? (
-            <Text color="dimmed" align="center" mt="xl">
-              Aucun bulletin disponible. Cliquez sur "Recharger les bulletins".
-            </Text>
+            <Paper p="4xl" radius="lg" bg="gray.0" withBorder>
+              <Stack align="center" gap="md">
+                <ThemeIcon size={64} radius="xl" variant="light" color="gray">
+                  <IconFolder size={32} />
+                </ThemeIcon>
+                <Text size="lg" fw={500} c="dimmed">Aucun bulletin disponible</Text>
+                <Text size="sm" c="dimmed">Cliquez sur "Actualiser" pour charger les bulletins</Text>
+              </Stack>
+            </Paper>
+          ) : !selectedFolder ? (
+            <Box>
+              <Text size="sm" fw={500} c="dimmed" mb="md" tt="uppercase">Sélectionnez un dossier</Text>
+              <Grid cols={{ base: 2, sm: 3, md: 4, lg: 5 }} gutter="md">
+                {Object.entries(groupedData).map(([folderName, slips]) => (
+                  <Grid.Col key={folderName} span={2}>
+                    <Card
+                      shadow="sm"
+                      padding="lg"
+                      radius="lg"
+                      onClick={() => handleFolderClick(folderName)}
+                      withBorder
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        backgroundColor: 'white',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 12px 24px -8px rgba(0, 0, 0, 0.15)',
+                          borderColor: '#3b82f6',
+                        },
+                      }}
+                    >
+                      <Stack align="center" gap="sm">
+                        <ThemeIcon size={48} radius="xl" variant="light" color="blue">
+                          <IconFolder size={24} />
+                        </ThemeIcon>
+                        <Text fw={600} size="sm" c="#1e293b" lineClamp={1} ta="center">
+                          {folderName}
+                        </Text>
+                        <Badge color="blue" variant="light" size="sm" radius="xl">
+                          {slips.length} bulletins
+                        </Badge>
+                      </Stack>
+                    </Card>
+                  </Grid.Col>
+                ))}
+              </Grid>
+            </Box>
           ) : (
-            <Grid cols={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing="md">
-              {Object.entries(groupedData).map(([folderName, slips]) => (
-                <Grid.Col key={folderName} span={1}>
-                  <Card
-                    shadow="sm"
-                    padding="lg"
-                    radius="md"
-                    onClick={() => handleFolderClick(folderName)}
-                    withBorder
-                    sx={{
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                      },
-                    }}
-                  >
-                    <Stack align="center" gap="xs">
-                      <IconFolder size={32} color="#228be6" />
-                      <Text weight={600} size="sm" color="#228be6" lineClamp={1}>
-                        {folderName}
-                      </Text>
-                      <Badge color="blue" variant="light" size="sm" radius="xl">
-                        {slips.length} bulletins
-                      </Badge>
-                    </Stack>
-                  </Card>
-                </Grid.Col>
-              ))}
-            </Grid>
-          )}
-
-          {selectedFolder && (
-            <Box mt="lg">
-              <Divider my="md" />
-              <Group position="apart" mb="md">
+            <Box>
+              <Group justify="space-between" mb="lg">
                 <Group gap="sm">
-                  <IconFolder size={20} color="#228be6" />
-                  <Text size="lg" weight={600}>Dossier: {selectedFolder}</Text>
+                  <ActionIcon variant="light" color="blue" onClick={() => setSelectedFolder(null)}>
+                    <IconChevronDown size={16} style={{ transform: 'rotate(90deg)' }} />
+                  </ActionIcon>
+                  <Title order={4}>{selectedFolder}</Title>
                   <Badge variant="light">{filteredSlips.length} bulletins</Badge>
                 </Group>
                 <Button 
@@ -313,104 +371,170 @@ const PayrollVerificationPage = () => {
                   size="sm" 
                   leftSection={<IconX size={16} />} 
                   onClick={() => setSelectedFolder(null)}
+                  color="gray"
                 >
                   Fermer
                 </Button>
               </Group>
-              <Paper shadow="sm" padding="md" radius="md" withBorder>
-                {paginatedSlips.length === 0 ? (
-                  <Text size="sm" color="dimmed" align="center" p="md">
-                    {debouncedSearch 
-                      ? `Aucun résultat pour "${debouncedSearch}"` 
-                      : `Aucun bulletin disponible dans le dossier ${selectedFolder}`}
-                  </Text>
-                ) : (
-                  <Stack gap="sm">
-                    {paginatedSlips.map((fiche) => (
-                      <Paper 
-                        key={fiche.id} 
-                        p="sm" 
-                        shadow="xs" 
+
+              {paginatedSlips.length === 0 ? (
+                <Paper p="xl" radius="lg" bg="gray.0" withBorder>
+                  <Stack align="center" gap="md">
+                    <IconSearch size={32} color="#94a3b8" />
+                    <Text c="dimmed">
+                      {debouncedSearch 
+                        ? `Aucun résultat pour "${debouncedSearch}"` 
+                        : 'Aucun bulletin disponible'}
+                    </Text>
+                  </Stack>
+                </Paper>
+              ) : viewMode === 'grid' ? (
+                <Grid cols={{ base: 1, sm: 2, md: 3, lg: 3 }} gutter="lg">
+                  {paginatedSlips.map((fiche) => (
+                    <Grid.Col key={fiche.id} span={2}>
+                      <Card
+                        padding="lg"
+                        radius="lg"
                         withBorder
-                        sx={{ 
-                          transition: 'background-color 0.15s ease',
-                          '&:hover': { backgroundColor: '#f8f9fa' }
+                        sx={{
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 12px 24px -8px rgba(0, 0, 0, 0.15)',
+                          },
                         }}
                       >
-                        <Group position="apart" wrap="nowrap">
-                          <Box style={{ flex: 1, minWidth: 0 }}>
-                            <Group gap="xs" mb={4}>
-                              <IconFile size={14} color="#868e96" />
-                              <Text size="sm" weight={500}>
-                                Matricule: <strong>{fiche.matricule}</strong>
-                              </Text>
-                            </Group>
-                            <Text size="xs" color="dimmed" lineClamp={1}>
-                              {fiche.fileName}
-                            </Text>
-                          </Box>
-                          <Group gap="xs" wrap="nowrap">
-                            {/* <Button
-                              size="xs"
-                              variant="light"
-                              leftSection={<IconEye size={14} />}
-                              onClick={() => handleDisplay(fiche)}
-                            >
-                              Afficher
-                            </Button> */}
-                            <Button
-                              size="xs"
-                              variant="light"
-                              color="blue"
-                              leftSection={<IconDownload size={14} />}
+                        <Stack gap="md" align="center">
+                          <ThemeIcon size={56} radius="xl" variant="light" color="red">
+                            <IconFileTypePdf size={28} />
+                          </ThemeIcon>
+                          <Text size="md" fw={700} ta="center" lineClamp={1}>
+                            {fiche.matricule}
+                          </Text>
+                          <Text size="sm" c="dimmed" ta="center" lineClamp={2}>
+                            {fiche.fileName.split('/').pop()}
+                          </Text>
+                          <Group gap="sm" justify="center" mt="md">
+                            <Button 
+                              variant="light" 
+                              color="blue" 
+                              size="md"
+                              leftSection={<IconDownload size={18} />}
                               onClick={() => handleDownload(fiche)}
                             >
                               Télécharger
                             </Button>
                           </Group>
+                        </Stack>
+                      </Card>
+                    </Grid.Col>
+                  ))}
+                </Grid>
+              ) : (
+                <Stack gap="sm">
+                  {paginatedSlips.map((fiche) => (
+                    <Card
+                      key={fiche.id}
+                      padding="md"
+                      radius="md"
+                      withBorder
+                      sx={{
+                        transition: 'all 0.15s ease',
+                        '&:hover': {
+                          backgroundColor: '#f8fafc',
+                          borderColor: '#cbd5e1',
+                        },
+                      }}
+                    >
+                      <Group justify="space-between" wrap="nowrap">
+                        <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                          <ThemeIcon size="lg" radius="md" variant="light" color="red">
+                            <IconFileTypePdf size={18} />
+                          </ThemeIcon>
+                          <Box style={{ flex: 1, minWidth: 0 }}>
+                            <Group gap="xs">
+                              <Text size="sm" fw={600}>
+                                Matricule: {fiche.matricule}
+                              </Text>
+                              {fiche.matricule !== 'inconnu' && (
+                                <Badge size="xs" variant="light" color="green" leftSection={<IconCheck size={10} />}>
+                                  Valide
+                                </Badge>
+                              )}
+                            </Group>
+                            <Text size="xs" c="dimmed" lineClamp={1}>
+                              {fiche.fileName}
+                            </Text>
+                          </Box>
                         </Group>
-                      </Paper>
-                    ))}
-                  </Stack>
-                )}
-              </Paper>
+                        <Group gap="sm" wrap="nowrap">
+                          {/* <Tooltip label="Voir">
+                            <ActionIcon 
+                              variant="light" 
+                              color="gray"
+                              onClick={() => handleDisplay(fiche)}
+                            >
+                              <IconEye size={16} />
+                            </ActionIcon>
+                          </Tooltip> */}
+                          <Tooltip label="Télécharger">
+                            <ActionIcon 
+                              variant="light" 
+                              color="blue"
+                              onClick={() => handleDownload(fiche)}
+                            >
+                              <IconDownload size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Group>
+                      </Group>
+                    </Card>
+                  ))}
+                </Stack>
+              )}
             </Box>
           )}
         </Box>
       </ScrollArea>
 
-      {/* Fixed Footer with Pagination */}
-      <Box mt="md" pb="md">
-        {totalPages > 1 && (
-          <Group position="center" gap="md">
+      {/* Footer with Pagination */}
+      {selectedFolder && totalPages > 0 && (
+        <Box p="md" bg="white" style={{ borderTop: '1px solid #e2e8f0' }}>
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">
+              Affichage de {(currentPage - 1) * ITEMS_PER_PAGE + 1} à {Math.min(currentPage * ITEMS_PER_PAGE, filteredSlips.length)} sur {filteredSlips.length} bulletins
+            </Text>
             <Pagination
               total={totalPages}
               value={currentPage}
               onChange={setCurrentPage}
               size="sm"
               withEdges
+              siblings={1}
             />
           </Group>
-        )}
-        {totalPages > 0 && (
-          <Text size="sm" color="dimmed" align="center" mt="xs">
-            Affichage de {(currentPage - 1) * ITEMS_PER_PAGE + 1} à {Math.min(currentPage * ITEMS_PER_PAGE, filteredSlips.length)} sur {filteredSlips.length} bulletins
-          </Text>
-        )}
-      </Box>
+        </Box>
+      )}
 
       <Modal
         opened={pdfModalOpen}
         onClose={handleClosePdfModal}
-        title="Aperçu du Bulletin de Paie"
+        title={
+          <Group gap="sm">
+            <ThemeIcon size="sm" variant="light" color="red">
+              <IconFileTypePdf size={14} />
+            </ThemeIcon>
+            <Text fw={600}>Aperçu du Bulletin de Paie</Text>
+          </Group>
+        }
         size="100%"
         fullScreen
         padding={0}
         withCloseButton
       >
         {selectedPdf && (
-          <Box style={{ position: 'relative', height: '100%' }}>
-            <LoadingOverlay visible={pdfLoading} overlayProps={{ blur: 2 }} />
+          <Box style={{ position: 'relative', height: '100%', backgroundColor: '#1e293b' }}>
+            <LoadingOverlay visible={pdfLoading} overlayProps={{ blur: 2, opacity: 0.3 }} />
             <iframe
               src={selectedPdf}
               width="100%"
