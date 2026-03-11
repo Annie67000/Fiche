@@ -250,13 +250,13 @@ const PayrollVerificationPage = () => {
       <LoadingOverlay visible={loading} overlayProps={{ blur: 3, opacity: 0.5 }} />
       
       {/* Header */}
-      {/* <PayrollHeader 
+      <PayrollHeader 
         loading={loading} 
         loadFichesFromAPI={loadFichesFromAPI} 
         stats={stats} 
         statsExpanded={statsExpanded} 
         setStatsExpanded={setStatsExpanded} 
-      /> */}
+      />
 
       {/* Search & Controls */}
       <Box px="lg" py="md" bg="white" style={{ borderBottom: '1px solid #e2e8f0' }}>

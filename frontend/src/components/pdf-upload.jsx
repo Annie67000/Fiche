@@ -1,11 +1,19 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
-import { Viewer } from '@react-pdf-viewer/core';
-import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
-import { X } from 'lucide-react';
-import '@react-pdf-viewer/core/lib/styles/index.css';
-import '@react-pdf-viewer/default-layout/lib/styles/index.css';
+import { 
+  Container, Title, Text, Card, Group, Button, Box, 
+  ActionIcon, Badge, Progress, Table, Stack, ThemeIcon, 
+  SimpleGrid, Stepper, CopyButton, Tooltip, Avatar, RingProgress,
+  Divider, Modal, ScrollArea
+} from '@mantine/core';
+import { 
+  IconUpload, IconFile, IconX, IconDownload, IconEye, 
+  IconCopy, IconCheck, IconCloudUpload, IconFileSpreadsheet,
+  IconChecklist, IconClock, IconAlertCircle, IconFileCheck,
+  IconTrash, IconPlayerPlay, IconFileAnalytics
+} from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 
 const API_BASE_URL = import.meta.env.VITE_PDF_PROCESSOR_URL;
 
@@ -17,241 +25,455 @@ const PdfUpload = () => {
   const [loading, setLoading] = useState(false);
   const [viewingPdf, setViewingPdf] = useState(null);
   const [processDetail, setProcessDetail] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
-      alert('Seuls les fichiers PDF sont acceptés. Veuillez sélectionner un fichier PDF valide.');
+      notifications.show({
+        title: 'Fichier invalide',
+        message: 'Seuls les fichiers PDF sont acceptés.',
+        color: 'red',
+        icon: <IconAlertCircle />,
+      });
       return;
     }
     if (acceptedFiles.length > 0) {
       setSelectedFile(acceptedFiles[0]);
+      notifications.show({
+        title: 'Fichier sélectionné',
+        message: `${acceptedFiles[0].name} prêt à être traité`,
+        color: 'blue',
+        icon: <IconFile />,
+      });
     }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive, isDragAccept, isDragReject } = useDropzone({
     onDrop,
-    accept: {
-      'application/pdf': ['.pdf']
-    },
+    accept: { 'application/pdf': ['.pdf'] },
     maxFiles: 1,
-    maxSize: 50 * 1024 * 1024, // 50MB
+    maxSize: 50 * 1024 * 1024,
   });
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      alert('Veuillez d\'abord sélectionner un fichier PDF');
-      return;
-    }
+    if (!selectedFile) return;
 
     setLoading(true);
+    setUploadProgress(0);
+    setCurrentStep(1);
+    setStatus('pending');
+    setProcessedPaths([]);
+    
     const formData = new FormData();
     formData.append('file', selectedFile);
 
     try {
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 15;
+        });
+      }, 800);
+
       const response = await axios.post(`${API_BASE_URL}/process`, formData);
       setTaskId(response.data.task_id);
-      setStatus('Traitement en cours…');
-      pollTaskStatus(response.data.task_id);
+      setStatus('processing');
+      setCurrentStep(2);
+      pollTaskStatus(response.data.task_id, progressInterval);
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Échec du téléversement. Veuillez réessayer.');
       setLoading(false);
+      setCurrentStep(0);
+      notifications.show({
+        title: 'Erreur',
+        message: 'Échec du téléversement. Veuillez réessayer.',
+        color: 'red',
+        icon: <IconX />,
+      });
     }
   };
 
-  const removeFile = () => {
-    setSelectedFile(null);
-  };
-
-  const pollTaskStatus = async (taskId) => {
-    const interval = setInterval(async () => {
+  const pollTaskStatus = async (taskId, progressInterval) => {
+    const poll = setInterval(async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/task/${taskId}`);
         setStatus(response.data.status);
-        setProcessDetail(response.data.detail || null);
-
+        
         if (response.data.status === 'Completed') {
-          clearInterval(interval);
+          clearInterval(progressInterval);
+          clearInterval(poll);
+          setUploadProgress(100);
           setLoading(false);
-
-          // Get the folder structure
+          setCurrentStep(3);
+          
           const downloadResponse = await axios.get(`${API_BASE_URL}/download/${taskId}`);
           const structure = downloadResponse.data.folder_structure;
           const outputDir = downloadResponse.data.output_dir;
 
-          // Collect all paths
           const paths = [];
           for (const [employeeDir, files] of Object.entries(structure)) {
             for (const file of files) {
-              paths.push(`${outputDir}/${employeeDir}/${file}`);
+              paths.push({ path: `${outputDir}/${employeeDir}/${file}`, employee: employeeDir, fileName: file });
             }
           }
           setProcessedPaths(paths);
+          
+          notifications.show({
+            title: 'Traitement terminé',
+            message: `${paths.length} fichier(s) traité(s) avec succès`,
+            color: 'green',
+            icon: <IconChecklist />,
+          });
+        } else if (response.data.status === 'Failed') {
+          clearInterval(progressInterval);
+          clearInterval(poll);
+          setLoading(false);
+          setCurrentStep(0);
+          setUploadProgress(0);
+          notifications.show({
+            title: 'Échec',
+            message: response.data.detail || 'Une erreur est survenue',
+            color: 'red',
+            icon: <IconAlertCircle />,
+          });
         }
+        
+        setProcessDetail(response.data.detail);
       } catch (error) {
-        console.error('Status check error:', error);
-        clearInterval(interval);
+        clearInterval(progressInterval);
+        clearInterval(poll);
         setLoading(false);
-        alert('Erreur lors de la vérification du statut de la tâche. Veuillez réessayer.');
       }
-    }, 10000); // Poll every 10 seconds
+    }, 5000);
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setUploadProgress(0);
+    setCurrentStep(0);
+  };
+
+  const resetAll = () => {
+    setSelectedFile(null);
+    setTaskId(null);
+    setStatus(null);
+    setProcessedPaths([]);
+    setLoading(false);
+    setViewingPdf(null);
+    setProcessDetail(null);
+    setUploadProgress(0);
+    setCurrentStep(0);
+  };
+
+  const getStepStatus = (step) => {
+    if (currentStep > step) return 'completed';
+    if (currentStep === step) return 'progress';
+    return 'wait';
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      <h2 className="text-2xl font-bold mb-6 text-center">Téléversement et traitement de PDF</h2>
+    <Container size="xl" py="xl">
+      <Stack gap="xl">
+        <Box>
+          <Group gap="md" mb="xs">
+            <ThemeIcon size={40} radius="xl" variant="light" color="green">
+              <IconFileAnalytics size={22} />
+            </ThemeIcon>
+            <Box>
+              <Title order={2} fw={700}>Importation PDF</Title>
+              <Text c="dimmed" size="sm">Importez et traitez vos fiches de paie</Text>
+            </Box>
+          </Group>
+        </Box>
 
-      <div className="mb-6">
-        <div
-          {...getRootProps()}
-          className={`
-            border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-            ${isDragActive && isDragAccept ? 'border-green-400 bg-green-50' : ''}
-            ${isDragActive && isDragReject ? 'border-red-400 bg-red-50' : ''}
-            ${!isDragActive ? 'border-gray-300 hover:border-blue-400 hover:bg-blue-50' : ''}
-          `}
+        <Stepper 
+          active={currentStep} 
+          color="green"
+          size="sm"
+          styles={{
+            step: { padding: '0 8px' },
+            stepIcon: { borderWidth: 2 },
+            stepLabel: { fontSize: 12 }
+          }}
         >
-          <input {...getInputProps()} />
-          <div className="space-y-4">
-            <div className="mx-auto w-16 h-16 text-gray-400">
-              <svg fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"></path>
-              </svg>
-            </div>
-            <div>
-              {isDragActive ? (
-                <p className="text-lg font-medium">
-                  {isDragAccept ? (
-                    <span className="text-green-600">Déposez le fichier PDF ici...</span>
-                  ) : (
-                    <span className="text-red-600">Seuls les fichiers PDF sont autorisés</span>
-                  )}
-                </p>
-              ) : (
-                <div>
-                  <p className="text-lg font-medium text-gray-900">
-                    Glissez-déposez un fichier PDF ici, ou cliquez pour sélectionner
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Seuls les fichiers PDF sont acceptés (max 50 Mo)
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+          <Stepper.Step 
+            label="Sélection" 
+            description="Choisir le fichier"
+            icon={<IconFile size={18} />}
+            completedIcon={<IconCheck size={18} />}
+          />
+          <Stepper.Step 
+            label="Traitement" 
+            description="Analyse en cours"
+            icon={<IconPlayerPlay size={18} />}
+            loading={currentStep === 2}
+          />
+          <Stepper.Step 
+            label="Terminé" 
+            description="Fichiers générés"
+            icon={<IconChecklist size={18} />}
+          />
+        </Stepper>
 
-        {selectedFile && (
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-red-500 rounded text-white flex items-center justify-center">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"></path>
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
-                  <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                </div>
-              </div>
-              <button
-                onClick={removeFile}
-                className="text-red-500 hover:text-red-700 p-1"
-                title="Supprimer le fichier"
+        <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
+          <Card shadow="md" padding="xl" radius="lg" withBorder>
+            <Stack gap="lg">
+              <Group justify="space-between">
+                <Text fw={600} size="lg">Fichier source</Text>
+                <Badge variant="light" color="violet">PDF • Max 50Mo</Badge>
+              </Group>
+              
+              <Box
+                {...getRootProps()}
+                style={{
+                  border: `2px dashed ${isDragAccept ? '#40c057' : isDragReject ? '#fa5252' : isDragActive ? '#228be6' : '#dee2e6'}`,
+                  backgroundColor: isDragAccept ? '#f0fff4' : isDragReject ? '#fff5f5' : isDragActive ? '#e7f5ff' : '#f8f9fa',
+                  borderRadius: 16,
+                  padding: 48,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                }}
               >
-                <X className="w-5 h-5 cursor-pointer" />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+                <input {...getInputProps()} />
+                <Stack align="center" gap="md">
+                  <ThemeIcon 
+                    size={72} 
+                    radius="xl" 
+                    variant="light" 
+                    color={isDragAccept ? 'green' : isDragReject ? 'red' : isDragActive ? 'blue' : 'gray'}
+                  >
+                    <IconCloudUpload size={36} />
+                  </ThemeIcon>
+                  {isDragAccept ? (
+                    <Text c="green" fw={600} size="lg">Déposez le fichier...</Text>
+                  ) : isDragReject ? (
+                    <Text c="red" fw={600} size="lg">PDF uniquement</Text>
+                  ) : (
+                    <>
+                      <Text fw={600} size="lg" c="#1a1b1e">Glissez votre PDF ici</Text>
+                      <Text c="dimmed" size="sm">ou cliquez pour parcourir</Text>
+                    </>
+                  )}
+                </Stack>
+              </Box>
 
-      <button
-        onClick={handleUpload}
-        disabled={!selectedFile || loading}
-        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-      >
-        {loading ? 'Traitement en cours…' : 'Téléverser et traiter le PDF'}
-      </button>
+              {selectedFile && (
+                <Card withBorder radius="md" p="md" bg="gray.0">
+                  <Group justify="space-between">
+                    <Group gap="md">
+                      <Avatar color="red" radius="md" size="lg">
+                        <IconFileSpreadsheet size={22} />
+                      </Avatar>
+                      <Box>
+                        <Text size="sm" fw={600} lineClamp={1} maw={250}>{selectedFile.name}</Text>
+                        <Text size="xs" c="dimmed">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</Text>
+                      </Box>
+                    </Group>
+                    <ActionIcon color="red" variant="light" onClick={removeFile} size="lg">
+                      <IconTrash size={20} />
+                    </ActionIcon>
+                  </Group>
+                </Card>
+              )}
 
-      {status && (
-        <p className="mt-4 text-center text-lg">
-          Statut : <span className={status === 'Completed' ? 'text-green-600' : 'text-blue-600'}>{status === 'Completed' ? 'Terminé' : status}</span>
-        </p>
-      )}
+              {loading && (
+                <Box>
+                  <Group justify="space-between" mb={8}>
+                    <Text size="sm" c="dimmed">
+                      {currentStep === 1 ? 'Téléversement...' : 'Traitement en cours...'}
+                    </Text>
+                    <Text size="sm" fw={600}>{uploadProgress}%</Text>
+                  </Group>
+                  <Progress 
+                    value={uploadProgress} 
+                    color={uploadProgress === 100 ? 'green' : 'blue'} 
+                    size="lg" 
+                    radius="xl"
+                    animated={currentStep === 1}
+                  />
+                </Box>
+              )}
 
-      {processDetail && (
-        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">Détails du traitement :</h3>
-          <p className="text-sm text-yellow-800 whitespace-pre-wrap">{processDetail}</p>
-        </div>
-      )}
+              <Group grow>
+                <Button
+                  size="md"
+                  onClick={handleUpload}
+                  disabled={!selectedFile || loading}
+                  loading={loading && currentStep === 1}
+                  leftSection={<IconUpload size={20} />}
+                  color="green"
+                  variant="filled"
+                >
+                  {loading ? 'Traitement...' : 'Démarrer'}
+                </Button>
+                {processedPaths.length > 0 && (
+                  <Button
+                    size="md"
+                    variant="light"
+                    onClick={resetAll}
+                    leftSection={<IconPlayerPlay size={20} />}
+                  >
+                    Nouveau
+                  </Button>
+                )}
+              </Group>
+            </Stack>
+          </Card>
 
-      {processedPaths.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4">Chemins des PDF traités :</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-300">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="py-2 px-4 border-b text-left">#</th>
-                  <th className="py-2 px-4 border-b text-left">Chemin du PDF</th>
-                  <th className="py-2 px-4 border-b text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {processedPaths.map((path, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="py-2 px-4 border-b text-sm font-mono">{index + 1}</td>
-                    <td className="py-2 px-4 border-b font-mono text-sm break-all">{path}</td>
-                    <td className="py-2 px-4 border-b text-sm">
-                      <button
-                        onClick={() => setViewingPdf(path)}
-                        className="mr-2 px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-                      >
-                        Voir
-                      </button>
-                      <button
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = `${API_BASE_URL}/media/${path}`;
-                          link.download = path.split('/').pop();
-                          link.click();
-                        }}
-                        className="px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
-                      >
-                        Télécharger
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+          <Card shadow="md" padding="xl" radius="lg" withBorder>
+            <Stack gap="lg">
+              <Group justify="space-between">
+                <Text fw={600} size="lg">Statut du traitement</Text>
+                {status && (
+                  <Badge 
+                    size="lg" 
+                    color={status === 'Completed' ? 'green' : status === 'Failed' ? 'red' : 'blue'}
+                    variant="light"
+                  >
+                    {status === 'Completed' ? 'Terminé' : status === 'Failed' ? 'Échoué' : 'En cours'}
+                  </Badge>
+                )}
+              </Group>
 
-      {viewingPdf && (
-        <div className="mt-8 p-4 bg-gray-100 rounded">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Visualisation : {viewingPdf.split('/').pop()}</h3>
-            <button
-              onClick={() => setViewingPdf(null)}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              Fermer
-            </button>
-          </div>
-          <div className="border h-[600px]">
-            <Viewer
-              fileUrl={`${API_BASE_URL}/media/${viewingPdf}`}
-              plugins={[defaultLayoutPlugin()]}
+              <Divider />
+
+              {processDetail && (
+                <Card withBorder radius="md" p="sm" bg="yellow.0">
+                  <Group gap="xs" mb="xs">
+                    <IconAlertCircle size={16} color="#fab005" />
+                    <Text size="sm" fw={600}>Détails</Text>
+                  </Group>
+                  <Text size="xs" c="dimmed" style={{ whiteSpace: 'pre-wrap' }}>{processDetail}</Text>
+                </Card>
+              )}
+
+              {!status && (
+                <Box py={60} style={{ textAlign: 'center' }}>
+                  <RingProgress
+                    size={120}
+                    thickness={8}
+                    roundCaps
+                    sections={[{ value: 0, color: 'gray' }]}
+                    label={
+                      <Text c="dimmed" size="xs" ta="center">En attente</Text>
+                    }
+                    mx="auto"
+                  />
+                  <Text c="dimmed" size="sm" mt="md">Sélectionnez un fichier pour commencer</Text>
+                </Box>
+              )}
+
+              {processedPaths.length > 0 && (
+                <Box>
+                  <Group justify="space-between" mb="md">
+                    <Group gap="sm">
+                      <IconFileCheck size={20} color="#40c057" />
+                      <Text fw={600}>Résultats ({processedPaths.length})</Text>
+                    </Group>
+                    <Badge color="green" variant="light">{processedPaths.length} fichiers</Badge>
+                  </Group>
+                  
+                  <ScrollArea h={300}>
+                    <Table striped highlightOnHover>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Employé</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {processedPaths.map((item, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <Group gap="xs">
+                                <Avatar size="sm" radius="xl" color="violet">
+                                  {item.employee?.[0] || '?'}
+                                </Avatar>
+                                <Box>
+                                  <Text size="sm" fw={500}>{item.employee}</Text>
+                                  <Text size="xs" c="dimmed" lineClamp={1}>{item.fileName}</Text>
+                                </Box>
+                              </Group>
+                            </td>
+                            <td>
+                              <Group gap="xs">
+                                <Tooltip label="Visualiser">
+                                  <ActionIcon 
+                                    color="blue" 
+                                    variant="light" 
+                                    onClick={() => setViewingPdf(item.path)}
+                                  >
+                                    <IconEye size={16} />
+                                  </ActionIcon>
+                                </Tooltip>
+                                <CopyButton value={`${API_BASE_URL}/media/${item.path}`}>
+                                  {({ copied, copy }) => (
+                                    <Tooltip label={copied ? 'Copié!' : 'Copier lien'}>
+                                      <ActionIcon 
+                                        color={copied ? 'teal' : 'gray'} 
+                                        variant="light" 
+                                        onClick={copy}
+                                      >
+                                        {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                                      </ActionIcon>
+                                    </Tooltip>
+                                  )}
+                                </CopyButton>
+                                <Tooltip label="Télécharger">
+                                  <ActionIcon 
+                                    color="green" 
+                                    variant="light"
+                                    component="a"
+                                    href={`${API_BASE_URL}/media/${item.path}`}
+                                    download={item.fileName}
+                                  >
+                                    <IconDownload size={16} />
+                                  </ActionIcon>
+                                </Tooltip>
+                              </Group>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </ScrollArea>
+                </Box>
+              )}
+            </Stack>
+          </Card>
+        </SimpleGrid>
+
+        <Modal
+          opened={!!viewingPdf}
+          onClose={() => setViewingPdf(null)}
+          title={
+            <Group gap="sm">
+              <IconFileSpreadsheet size={20} />
+              <Text fw={600}>{viewingPdf?.split('/').pop()}</Text>
+            </Group>
+          }
+          size="90%"
+          padding="xs"
+        >
+          <Box style={{ height: '75vh' }}>
+            <iframe
+              src={viewingPdf ? `${API_BASE_URL}/media/${viewingPdf}` : ''}
+              width="100%"
+              height="100%"
+              style={{ border: 'none', borderRadius: 8 }}
+              title="PDF Viewer"
             />
-          </div>
-        </div>
-      )}
-    </div>
+          </Box>
+        </Modal>
+      </Stack>
+    </Container>
   );
 };
 
