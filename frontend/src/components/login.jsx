@@ -1,26 +1,41 @@
 import { useState } from 'react';
-import { TextInput, PasswordInput, Button, Paper, Title, Text, Anchor, Group, Checkbox } from '@mantine/core';
+import { 
+  TextInput, 
+  PasswordInput, 
+  Button, 
+  Paper, 
+  Title, 
+  Text, 
+  Group, 
+  Checkbox,
+  Box,
+  ThemeIcon,
+  Stack,
+  Divider,
+  Anchor,
+} from '@mantine/core';
 import axios from 'axios';
+import { useNavigate } from "react-router-dom";
+import { 
+  IconFileText, 
+  IconShieldCheck, 
+  IconClock, 
+  IconUsers,
+  IconLock,
+} from '@tabler/icons-react';
 
-import { useNavigate } from "react-router-dom"
-
-// Composant LoginPage : formulaire de connexion
 function LoginPage() {
-  // États pour gérer les données du formulaire, les erreurs et le chargement
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [errors, setErrors] = useState({ username: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
 
-
   const navigate = useNavigate();
 
-  // Gestion des changements dans les champs du formulaire
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Validation des champs du formulaire
   const validateForm = () => {
     let valid = true;
     const newErrors = { username: '', password: '' };
@@ -30,15 +45,10 @@ function LoginPage() {
       valid = false;
     }
 
-    // if (formData.password.length < 6) {
-    //   newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères';
-    //   valid = false;
-    // }
-
     setErrors(newErrors);
     return valid;
   };
-  // Soumission du formulaire - Vraie connexion au backend Django
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
@@ -50,17 +60,12 @@ function LoginPage() {
         });
 
         const data = response.data;
+        const { access, refresh } = data;
 
-        console.log(data);
-
-        const { access, refresh } = data
-
-        // Sauvegarde le token et l'utilisateur
         localStorage.setItem('access_token', access);
         localStorage.setItem('refresh_token', refresh);
 
-        // Redirige vers la page d'accueil
-        navigate('/')
+        navigate('/');
       } catch (err) {
         if (err.response && err.response.status === 401) {
           setErrors({ password: err.response.data.error || 'Identifiants invalides' });
@@ -73,97 +78,136 @@ function LoginPage() {
     }
   };
 
-  // Styles pour les éléments du formulaire
-  const styles = {
-    background: {
-      background: '#fff',
-      minHeight: '100vh',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: '20px',
-    },
-    paper: {
-      width: '100%',
-      maxWidth: '400px',
-      padding: '40px',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderRadius: '10px',
-      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-    },
-    avatar: {
-      width: '90px',
-      height: '90px',
-      borderRadius: '50%',
-      backgroundColor: '#51cf66',
-      margin: '-50px auto 30px',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      color: 'white',
-      fontSize: '40px',
-      boxShadow: '0 5px 15px rgba(0, 0, 0, 0.2)',
-    },
-    title: {
-      marginBottom: '30px',
-      color: '#333',
-      fontWeight: '600',
-      textAlign: 'center',
-    },
-  };
+  const features = [
+    { icon: IconFileText, title: 'Gestion des Fiches', desc: 'Organisez et gérez facilement les bulletins de paie' },
+    { icon: IconShieldCheck, title: 'Sécurisé', desc: 'Stockage chiffré et protégé de vos documents' },
+    { icon: IconClock, title: 'Accès Rapide', desc: 'Récupérez vos bulletins en un clic' },
+  ];
 
   return (
-    <div className=' bg-gray-300 flex justify-center items-center min-h-screen'>
-      <Paper withBorder shadow="md" radius="md" style={styles.paper}>
-        <div style={styles.avatar }>👤</div>
-        <Title order={2} style={styles.title}>Connexion</Title>
-        <form onSubmit={handleSubmit}>
-          <TextInput
-            label="Nom d'utilisateur"
-            placeholder="Votre nom d'utilisateur"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            error={errors.username}
-            required
-            style={{ marginBottom: '20px' }}
-          />
-          <PasswordInput
-            label="Mot de passe"
-            placeholder="Votre mot de passe"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
-            required
-            style={{ marginBottom: '20px' }}
-          />
-          <Group position="apart" style={{ marginBottom: '25px' }}>
-            <Checkbox label="Se souvenir de moi" />
-            <Anchor href="#" size="sm" style={{ color: '#51cf66' }}>Mot de passe oublié ?</Anchor>
-          </Group>
-          <Button
-            fullWidth
-            type="submit"
-            loading={isLoading}
-            style={{
-              marginTop: '10px',
-              height: '45px',
-              fontWeight: '600',
-              fontSize: '16px',
-              backgroundColor: '#51cf66',
-              color: 'white',
-            }}
-          >
-            SE CONNECTER
-          </Button>
-        </form>
-        <Text align="center" mt="md" style={{ marginTop: '25px' }}>
-          Vous n'avez pas de compte ?{' '}
-          <Anchor href="/inscription" weight={700} style={{ color: '#51cf66' }}>S'inscrire</Anchor>
+    <Box style={{ minHeight: '100vh', display: 'flex' }}>
+      {/* Left Side - Banner */}
+      <Box 
+        style={{ 
+          flex: 1, 
+          background: 'linear-gradient(135deg, #166534 0%, #15803d 50%, #16a34a 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '40px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Decorative circles */}
+        <Box style={{ position: 'absolute', top: -100, right: -100, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+        <Box style={{ position: 'absolute', bottom: -50, left: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+        
+        <ThemeIcon size={80} radius="xl" variant="white" color="green" mb="xl">
+          <IconFileText size={40} />
+        </ThemeIcon>
+        
+        <Title order={1} c="white" size={42} fw={700} ta="center" mb="md">
+          Fiche de Paie
+        </Title>
+        <Text c="white" size="lg" ta="center" mb="xl" opacity={0.9}>
+          Gestion simplifiée des bulletins de paie
         </Text>
-      </Paper>
-    </div>
+
+        <Stack gap="lg" mt="xl" style={{ maxWidth: 320 }}>
+          {features.map((feature, index) => (
+            <Group key={index} gap="md" wrap="nowrap">
+              <ThemeIcon size={40} radius="xl" variant="white" color="green" style={{ flexShrink: 0 }}>
+                <feature.icon size={20} />
+              </ThemeIcon>
+              <Box>
+                <Text c="white" fw={600} size="sm">{feature.title}</Text>
+                <Text c="white" size="xs" opacity={0.8}>{feature.desc}</Text>
+              </Box>
+            </Group>
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Right Side - Login Form */}
+      <Box 
+        style={{ 
+          flex: 1, 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          backgroundColor: '#f8fafc',
+          padding: '40px',
+        }}
+      >
+        <Paper 
+          withBorder 
+          shadow="xl" 
+          radius="lg" 
+          p="xl" 
+          style={{ width: '100%', maxWidth: 420 }}
+        >
+          <Stack align="center" mb="xl">
+            <ThemeIcon size={56} radius="xl" variant="light" color="green">
+              <IconLock size={28} />
+            </ThemeIcon>
+            <Title order={2} c="#1e293b" fw={600}>Connexion</Title>
+            <Text c="dimmed" size="sm" ta="center">
+              Entrez vos identifiants pour accéder à votre espace
+            </Text>
+          </Stack>
+
+          <form onSubmit={handleSubmit}>
+            <Stack gap="md">
+              <TextInput
+                label="Nom d'utilisateur"
+                placeholder="Votre nom d'utilisateur"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                error={errors.username}
+                required
+                size="md"
+              />
+              <PasswordInput
+                label="Mot de passe"
+                placeholder="Votre mot de passe"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                error={errors.password}
+                required
+                size="md"
+              />
+              
+              <Group position="apart">
+                <Checkbox label="Se souvenir de moi" size="sm" />
+                <Anchor href="#" size="sm" c="green">Mot de passe oublié ?</Anchor>
+              </Group>
+              
+              <Button
+                fullWidth
+                type="submit"
+                loading={isLoading}
+                size="md"
+                mt="md"
+                color="green"
+              >
+                Se connecter
+              </Button>
+            </Stack>
+          </form>
+
+          <Divider label="OU" labelPosition="center" my="lg" />
+
+          <Text align="center" size="sm" c="dimmed">
+            Vous n'avez pas de compte ?{' '}
+            <Anchor href="/inscription" weight={600} c="green">Créer un compte</Anchor>
+          </Text>
+        </Paper>
+      </Box>
+    </Box>
   );
 }
 
