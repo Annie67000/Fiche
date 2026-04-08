@@ -65,6 +65,9 @@ const PayrollVerificationPage = () => {
   const [statsExpanded, setStatsExpanded] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
 
+  const isStaff = localStorage.getItem('is_staff') === 'true';
+  const userMatricule = localStorage.getItem('matricule');
+
   const extractMatricule = useCallback((fileName) => {
     const match = fileName.match(/^(\d+)_/);
     return match ? match[1] : 'inconnu';
@@ -137,17 +140,27 @@ const PayrollVerificationPage = () => {
 
       const folderPromises = folders.map(async (folderPath) => {
         const folderName = folderPath.split('/').pop();
+        
         const filesResponse = await fetch(`${API_URL}/list_files/${folderName}`);
         if (!filesResponse.ok) return [];
         const filesData = await filesResponse.json();
         
-        return filesData.files.map(relPath => ({
-          id: id++,
-          matricule: extractMatricule(relPath.split('/').pop()),
-          fileName: relPath,
-          folderName: folderName,
-          encryptedFileName: relPath.replace('.pdf', '.enc'),
-        }));
+        const fileItems = filesData.files.map(relPath => {
+          const fileName = relPath.split('/').pop();
+          return {
+            id: id++,
+            matricule: extractMatricule(fileName),
+            fileName: relPath,
+            folderName: folderName,
+            encryptedFileName: relPath.replace('.pdf', '.enc'),
+          };
+        });
+
+        if (!isStaff && userMatricule) {
+          return fileItems.filter(fiche => fiche.matricule === userMatricule);
+        }
+        
+        return fileItems;
       });
 
       const results = await Promise.all(folderPromises);
@@ -158,7 +171,7 @@ const PayrollVerificationPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [extractMatricule]);
+  }, [extractMatricule, isStaff, userMatricule]);
 
   const getSecureFileUrl = useCallback((fiche) => {
     const baseName = fiche.fileName.split('/').pop();
