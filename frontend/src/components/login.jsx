@@ -64,6 +64,14 @@ function LoginPage() {
 
         localStorage.setItem('access_token', access);
         localStorage.setItem('refresh_token', refresh);
+        localStorage.setItem('is_staff', data.user.is_staff || false);
+        if (data.matricule) {
+          localStorage.setItem('matricule', data.matricule);
+        }
+        
+        if (data.employe) {
+          localStorage.setItem('employe', JSON.stringify(data.employe));
+        }
 
         navigate('/');
       } catch (err) {

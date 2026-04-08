@@ -1,4 +1,4 @@
-import { NavLink, Box, Text, Avatar, Divider, Button, ScrollArea } from '@mantine/core';
+import { NavLink, Box, Text, Avatar, Divider, Button, ScrollArea, Group, Badge } from '@mantine/core';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   IconLayoutDashboard,
@@ -7,43 +7,79 @@ import {
   IconHistory,
   IconLogout,
   IconUpload,
-  IconSettings
+  IconSettings,
+  IconUser,
+  IconBadge
 } from '@tabler/icons-react';
 
-const menuItems = [
+const menuItems = (isStaff) => [
   { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
-  // { to: "/employes", label: "Employés", icon: IconUsers },
-  { to: "/pdf-upload", label: "PDF Upload", icon: IconUpload },
-  { to: "/verification", label: "Vérification", icon: IconFileText },
-  // { to: "/historique", label: "Historique", icon: IconHistory },
+  ...(isStaff ? [
+    { to: "/employes", label: "Employés", icon: IconUsers },
+    { to: "/pdf-upload", label: "PDF Upload", icon: IconUpload },
+    { to: "/verification", label: "Vérification", icon: IconFileText },
+  ] : [
+    { to: "/verification", label: "Mes Fiches de Paie", icon: IconFileText },
+  ]),
 ];
 
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const isStaff = localStorage.getItem('is_staff') === 'true';
+  const menu = menuItems(isStaff);
+  
+  const employeRaw = localStorage.getItem('employe');
+  const employe = employeRaw ? JSON.parse(employeRaw) : null;
+  
+  const username = localStorage.getItem('access_token') ? localStorage.getItem('username') || employe?.prenom : null;
+  const displayName = employe ? `${employe.prenom || ''} ${employe.nom || ''}`.trim() : (username || 'Utilisateur');
+  const userInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('is_staff');
+    localStorage.removeItem('matricule');
+    localStorage.removeItem('employe');
+    localStorage.removeItem('username');
     navigate('/login');
   };
 
   return (
     <Box w={280} className='bg-green-700' h="100vh" p="md" style={{ position: 'fixed', left: 0, top: 0, borderRight: '1px solid rgba(255,255,255,0.2)' }}>
       <ScrollArea h="100%"  scrollbarSize={8}>
-        {/* Logo + Titre */}
+        {/* User Info */}
         <Box className='flex flex-col items-center justify-center' my="xl">
-          <Avatar size={80} radius={40} color="white" title='Fiche de Paie'>
-            <Text size={32} weight={700} color="white">FP</Text>
+          <Avatar size={80} radius={40} color="white" style={{ background: 'rgba(255,255,255,0.2)' }}>
+            <Text size={28} weight={700} color="white">{userInitials || 'U'}</Text>
           </Avatar>
-          {/* <Text size="lg" color="white" mt="md">Service RH</Text> */}
+          <Text size="md" color="white" mt="md" fw={600} ta="center">{displayName}</Text>
+          {employe && (
+            <Group gap="xs" mt="xs">
+              <Badge leftSection={<IconBadge size={12} />} variant="light" color="white" c="green">
+                {employe.matricule}
+              </Badge>
+            </Group>
+          )}
+          {employe && (
+            <Group gap={4} mt="xs">
+              <Text size="xs" c="white" opacity={0.8}>{employe.poste || ''}</Text>
+              {employe.departement && (
+                <>
+                  <Text size="xs" c="white" opacity={0.6}>•</Text>
+                  <Text size="xs" c="white" opacity={0.8}>{employe.departement}</Text>
+                </>
+              )}
+            </Group>
+          )}
         </Box>
 
         <Divider color="white" opacity={0.2} my="lg" />
 
         {/* Menu */}
         <Box mx="xs">
-          {menuItems.map((item) => {
+          {menu.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.to;
 

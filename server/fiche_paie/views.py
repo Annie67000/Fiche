@@ -288,6 +288,23 @@ class LoginView(APIView):
                             status=status.HTTP_401_UNAUTHORIZED)
 
         refresh = RefreshToken.for_user(user)
+        
+        employe = None
+        employe_data = None
+        try:
+            employe = Employe.objects.get(user=user, actif=True)
+            employe_data = {
+                'matricule': employe.matricule,
+                'nom': employe.nom,
+                'prenom': employe.prenom,
+                'email': employe.email,
+                'departement': employe.departement,
+                'poste': employe.poste,
+            }
+            matricule = employe.matricule
+        except Employe.DoesNotExist:
+            matricule = None
+        
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
@@ -297,7 +314,10 @@ class LoginView(APIView):
                 'email': user.email,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
-            }
+                'is_staff': user.is_staff,
+            },
+            'matricule': matricule,
+            'employe': employe_data,
         })
 
 @api_view(['GET'])

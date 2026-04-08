@@ -28,4 +28,4 @@ RUN mkdir -p media
 EXPOSE 8000
 
 # Wait for PostgreSQL to be ready, then run migrations and start the server
-CMD ["/bin/sh", "-c", "/app/wait-for-postgres.sh && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+CMD ["sh", "-c", "sleep 5 && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
