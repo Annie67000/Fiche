@@ -72,7 +72,7 @@ function LoginPage() {
           localStorage.setItem('employe', JSON.stringify(data.employe));
         }
 
-        navigate('/');
+        navigate('/verification');
       } catch (err) {
         if (err.response && err.response.status === 401) {
           setErrors({ password: err.response.data.error || 'Identifiants invalides' });

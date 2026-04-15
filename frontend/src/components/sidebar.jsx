@@ -18,7 +18,7 @@ const menuItems = (isStaff) => [
   ...(isStaff ? [
     { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
     { to: "/pdf-upload", label: "PDF Upload", icon: IconUpload },
-    { to: "/verification", label: "Vérification", icon: IconFileText },
+    { to: "/verification", label: "Fiche de Paie", icon: IconFileText },
   ] : [
     { to: "/verification", label: "Mes Fiches de Paie", icon: IconFileText },
   ]),
