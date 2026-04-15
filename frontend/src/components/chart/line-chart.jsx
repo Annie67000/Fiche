@@ -1,51 +1,83 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
-  LineElement,
+  BarElement,
   CategoryScale,
   LinearScale,
-  PointElement,
   Tooltip,
   Legend,
 } from "chart.js";
 
-import { Line } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 
-// Register chart components
 ChartJS.register(
-  LineElement,
+  BarElement,
   CategoryScale,
   LinearScale,
-  PointElement,
   Tooltip,
   Legend
 );
 
+const MONTH_NAMES = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+
 export default function LineChart() {
+  const [chartData, setChartData] = useState({ labels: [], data: [] });
+
+  useEffect(() => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8003";
+    fetch(`${API_BASE_URL}/api/v1/transaction-stats/`)
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.labels && result.labels.length > 0) {
+          const labels = result.labels.map((date) => {
+            const monthIndex = parseInt(date.split("-")[1], 10) - 1;
+            return MONTH_NAMES[monthIndex] || date;
+          });
+          setChartData({
+            labels,
+            data: result.data,
+          });
+        }
+      })
+      .catch((err) => console.error("Erreur fetch transaction stats:", err));
+  }, []);
+
   const data = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: chartData.labels,
     datasets: [
       {
-        label: "Transactions",
-        data: [50, 75, 125, 100, 200, 150], // Adjusted realistic data
-        borderColor: "#51cf66", // Green to match project
-        backgroundColor: "rgba(81, 207, 102, 0.2)", // Semi-transparent green fill
-        borderWidth: 3,
-        pointRadius: 5,
-        pointBackgroundColor: "#51cf66",
-        tension: 0.3, // Smoother curve
+        label: "Nombre de fichiers",
+        data: chartData.data,
+        backgroundColor: "rgba(121, 80, 242, 0.8)",
+        borderColor: "#7950f2",
+        borderWidth: 1,
+        borderRadius: 4,
       },
     ],
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
     scales: {
       y: {
         beginAtZero: true,
+        grid: {
+          color: "rgba(0, 0, 0, 0.05)",
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
       },
     },
   };
 
-  return <Line data={data} options={options} />;
+  return <Bar data={data} options={options} />;
 }

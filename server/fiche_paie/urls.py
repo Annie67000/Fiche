@@ -28,6 +28,9 @@ urlpatterns = [
     path('fiche-paie/<int:pk>/', views.retrieve_fiche_paie, name='retrieve_fiche_paie'), # Détail d’une fiche (inclut URL PDF)
     path('fiche-paie/<int:pk>/update/', views.update_fiche_paie, name='update_fiche_paie'), # Modifier une fiche (PDF optionnel)
     path('fiche-paie/<int:pk>/delete/', views.delete_fiche_paie, name='delete_fiche_paie'), # Supprimer une fiche + fichier PDF
+
+    # --- STATISTIQUES ---
+    path('transaction-stats/', views.transaction_stats, name='transaction_stats'), # Statistiques mensuelles
 ]
     # Nouveau
 urlpatterns += [

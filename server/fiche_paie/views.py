@@ -338,3 +338,63 @@ def get_current_user(request):
         'is_staff': user.is_staff,
         'is_superuser': user.is_superuser,
     })
+
+
+import os
+import re
+from datetime import datetime
+
+MONTH_MAP = {
+    'jan': '01', 'fev': '02', 'mar': '03', 'avr': '04',
+    'mai': '05', 'jun': '06', 'jui': '07', 'aou': '08',
+    'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+}
+
+def parse_folder_date(folder_name):
+    match = re.match(r'^(jan|fev|mar|avr|mai|jun|jui|aou|sep|oct|nov|dec)_(20\d{2})', folder_name.lower())
+    if match:
+        month = MONTH_MAP.get(match.group(1), '01')
+        year = match.group(2)
+        return f'{year}-{month}-01'
+    return None
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def transaction_stats(request):
+    """
+    Récupère les statistiques mensuelles basées sur les dossiers dans pdf_separate_intelligent/output
+    Retourne la date d'ajout et le nombre de fichiers par dossier
+    URL : GET /api/v1/transaction-stats/
+    """
+    output_path = os.environ.get('PDF_OUTPUT_PATH', os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'pdf_separate_intelligent', 'output'))
+    
+    if not os.path.exists(output_path):
+        return Response({'labels': [], 'data': []})
+    
+    folder_stats = []
+    for folder_name in os.listdir(output_path):
+        folder_path = os.path.join(output_path, folder_name)
+        if os.path.isdir(folder_path):
+            folder_date = parse_folder_date(folder_name)
+            if not folder_date:
+                continue
+            
+            file_count = 0
+            for root, dirs, files in os.walk(folder_path):
+                file_count += len(files)
+            
+            folder_stats.append({
+                'date': folder_date,
+                'count': file_count,
+                'folder_name': folder_name
+            })
+    
+    folder_stats.sort(key=lambda x: x['date'])
+    
+    labels = [stat['date'] for stat in folder_stats]
+    data = [stat['count'] for stat in folder_stats]
+    
+    return Response({
+        'labels': labels,
+        'data': data
+    })

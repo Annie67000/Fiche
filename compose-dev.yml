@@ -30,9 +30,11 @@ services:
       - DEBUG=1
       - DATABASE_URL=postgresql://annie_user:annie_password@postgres:5432/annie_db
       - SECRET_KEY=django-insecure-rsadyeq4lg5_1+7(n+w=0v$34lpue#m_wvv7u*q!b@eklcqg0w
+      - PDF_OUTPUT_PATH=/app/pdf_output
     volumes:
       - ./server:/app
       - ./server/media:/app/media
+      - ./pdf_separate_intelligent/output:/app/pdf_output
     ports:
       - "8003:8000"
     depends_on:

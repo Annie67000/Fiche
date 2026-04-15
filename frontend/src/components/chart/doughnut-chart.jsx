@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -8,25 +8,31 @@ import {
 
 import { Doughnut } from "react-chartjs-2";
 
-// Enregistrer les éléments nécessaires
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+const FAKE_STATUS_DATA = {
+  labels: ["Envoyé", "En attente", "Échec"],
+  data: [65, 25, 10],
+};
+
 export default function DoughnutChart() {
+  const [statusData, setStatusData] = useState(FAKE_STATUS_DATA);
+
   const data = {
-    labels: ["En attente", "Envoyé", "Échec"],
+    labels: statusData.labels,
     datasets: [
       {
-        label: "Statut des envois (%)",
-        data: [50, 40, 10],
+        label: "Statut des envois",
+        data: statusData.data,
         backgroundColor: [
-          "rgba(255, 193, 7, 0.7)", // Yellow for largest
-          "rgba(81, 207, 102, 0.7)", // Green for medium
-          "rgba(255, 107, 107, 0.7)" // Red for smallest
+          "rgba(81, 207, 102, 0.8)",
+          "rgba(255, 193, 7, 0.8)",
+          "rgba(255, 107, 107, 0.8)",
         ],
         borderColor: [
-          "rgba(255, 193, 7, 1)",
           "rgba(81, 207, 102, 1)",
-          "rgba(255, 107, 107, 1)"
+          "rgba(255, 193, 7, 1)",
+          "rgba(255, 107, 107, 1)",
         ],
         borderWidth: 2,
       }
@@ -35,7 +41,13 @@ export default function DoughnutChart() {
 
   const options = {
     responsive: true,
-    cutout: "60%" // taille du trou au centre (donut)
+    maintainAspectRatio: false,
+    cutout: "60%",
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
   };
 
   return <Doughnut data={data} options={options} />;

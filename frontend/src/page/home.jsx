@@ -105,7 +105,7 @@ export default function Home() {
         {/* Graphique en ligne */}
         <Card shadow="sm" padding="xl" radius="lg" withBorder bg="white" h="auto">
           <p className="text-xl font-semibold mb-6" style={{ color: "#1a1b1e" }}>
-            Transactions par jour
+            Transaction mensuel
           </p>
 
           <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
