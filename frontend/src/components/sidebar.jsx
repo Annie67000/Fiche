@@ -15,7 +15,7 @@ import {
 const menuItems = (isStaff) => [
   { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
   ...(isStaff ? [
-    { to: "/employes", label: "Employés", icon: IconUsers },
+    // { to: "/employes", label: "Employés", icon: IconUsers },
     { to: "/pdf-upload", label: "PDF Upload", icon: IconUpload },
     { to: "/verification", label: "Vérification", icon: IconFileText },
   ] : [
