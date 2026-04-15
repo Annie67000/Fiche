@@ -393,8 +393,10 @@ def transaction_stats(request):
     
     labels = [stat['date'] for stat in folder_stats]
     data = [stat['count'] for stat in folder_stats]
+    total = sum(stat['count'] for stat in folder_stats)
     
     return Response({
         'labels': labels,
-        'data': data
+        'data': data,
+        'total': total
     })

@@ -1,9 +1,22 @@
 import { Card, Text, Group, SimpleGrid, Title, Container, Input, ActionIcon, Box } from "@mantine/core";
 import { IconUserPlus, IconFileImport, IconCheck, IconX, IconSearch } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
 import LineChart from "../components/chart/line-chart";
 import DoughnutChart from "../components/chart/doughnut-chart";
 
 export default function Home() {
+  const [totalFiles, setTotalFiles] = useState(0);
+
+  useEffect(() => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8003";
+    fetch(`${API_BASE_URL}/api/v1/transaction-stats/`)
+      .then((res) => res.json())
+      .then((result) => {
+        setTotalFiles(result.total || 0);
+      })
+      .catch((err) => console.error("Erreur fetch:", err));
+  }, []);
+
   return (
     <Container size="xl" py="md">
       {/* Titre + Recherche */}
@@ -57,7 +70,7 @@ export default function Home() {
                 Fiches importées
               </Text>
               <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="center">
-                2
+                {totalFiles}
               </Text>
             </Box>
           </div>

@@ -11,11 +11,12 @@ import {
   IconUser,
   IconBadge
 } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 const menuItems = (isStaff) => [
-  { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
   ...(isStaff ? [
-    // { to: "/employes", label: "Employés", icon: IconUsers },
+    { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
     { to: "/pdf-upload", label: "PDF Upload", icon: IconUpload },
     { to: "/verification", label: "Vérification", icon: IconFileText },
   ] : [
@@ -26,7 +27,26 @@ const menuItems = (isStaff) => [
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const isStaff = localStorage.getItem('is_staff') === 'true';
+  const [isStaff, setIsStaff] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8003";
+      axios.get(`${API_BASE_URL}/api/v1/me/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => {
+        setIsStaff(res.data.is_staff || false);
+      })
+      .catch(() => setIsStaff(false))
+      .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
   const menu = menuItems(isStaff);
   
   const employeRaw = localStorage.getItem('employe');
@@ -39,12 +59,19 @@ export default function Sidebar() {
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    localStorage.removeItem('is_staff');
     localStorage.removeItem('matricule');
     localStorage.removeItem('employe');
     localStorage.removeItem('username');
     navigate('/login');
   };
+
+  if (loading) {
+    return (
+      <Box w={280} className='bg-green-700' h="100vh" p="md" style={{ position: 'fixed', left: 0, top: 0 }}>
+        <Text color="white">Chargement...</Text>
+      </Box>
+    );
+  }
 
   return (
     <Box w={280} className='bg-green-700' h="100vh" p="md" style={{ position: 'fixed', left: 0, top: 0, borderRight: '1px solid rgba(255,255,255,0.2)' }}>
