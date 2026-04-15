@@ -44,11 +44,13 @@ import {
   IconClock,
   IconStack,
 } from '@tabler/icons-react';
+import axios from 'axios';
 
 import PayrollHeader from './payroll-header';
 
 const ITEMS_PER_PAGE = 6;
 const API_URL = import.meta.env.VITE_PDF_PROCESSOR_URL;
+const BASE_API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8003";
 
 const PayrollVerificationPage = () => {
   const [fiches, setFiches] = useState([]);
@@ -64,9 +66,22 @@ const PayrollVerificationPage = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [statsExpanded, setStatsExpanded] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [isStaff, setIsStaff] = useState(false);
 
-  const isStaff = localStorage.getItem('is_staff') === 'true';
   const userMatricule = localStorage.getItem('matricule');
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      axios.get(`${BASE_API_URL}/api/v1/me/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => {
+        setIsStaff(res.data.is_staff || false);
+      })
+      .catch(() => setIsStaff(false));
+    }
+  }, []);
 
   const extractMatricule = useCallback((fileName) => {
     const match = fileName.match(/^(\d+)_/);
