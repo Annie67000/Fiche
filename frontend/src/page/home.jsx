@@ -1,11 +1,13 @@
-import { Card, Text, Group, SimpleGrid, Title, Container, Input, ActionIcon, Box } from "@mantine/core";
-import { IconUserPlus, IconFileImport, IconCheck, IconX, IconSearch } from "@tabler/icons-react";
+import { Card, Text, Group, SimpleGrid, Title, Container, ActionIcon, Box, Select } from "@mantine/core";
+import { IconUserPlus, IconFileImport, IconMoonStars, IconSun } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import LineChart from "../components/chart/line-chart";
 import DoughnutChart from "../components/chart/doughnut-chart";
 
 export default function Home() {
   const [totalFiles, setTotalFiles] = useState(0);
+  const [language, setLanguage] = useState(localStorage.getItem("language") || "fr");
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8003";
@@ -17,148 +19,175 @@ export default function Home() {
       .catch((err) => console.error("Erreur fetch:", err));
   }, []);
 
+  useEffect(() => {
+    const syncLanguage = () => {
+      setLanguage(localStorage.getItem("language") || "fr");
+    };
+
+    window.addEventListener("languageChanged", syncLanguage);
+    window.addEventListener("storage", syncLanguage);
+
+    return () => {
+      window.removeEventListener("languageChanged", syncLanguage);
+      window.removeEventListener("storage", syncLanguage);
+    };
+  }, []);
+
+  const translations = {
+    fr: {
+      dashboard: "Dashboard",
+      employees: "Employés enregistrés",
+      files: "Fiches importées",
+      monthly: "Transaction mensuel",
+      status: "Statut des envois (%)",
+      sent: "Envoyé",
+      pending: "En attente",
+      failed: "Échec",
+    },
+    en: {
+      dashboard: "Dashboard",
+      employees: "Registered employees",
+      files: "Imported files",
+      monthly: "Monthly transactions",
+      status: "Delivery status (%)",
+      sent: "Sent",
+      pending: "Pending",
+      failed: "Failed",
+    },
+    mg: {
+      dashboard: "Tabilao fanaraha-maso",
+      employees: "Mpiasa voasoratra",
+      files: "Rakitra nampidirina",
+      monthly: "Fifanakalozana isam-bolana",
+      status: "Toetry ny fandefasana (%)",
+      sent: "Vita",
+      pending: "Miandry",
+      failed: "Tsy nety",
+    },
+  };
+
+  const t = translations[language] || translations.fr;
+
+  const bgColor = darkMode ? "#1f2937" : "#f8f9fa";
+  const cardBg = darkMode ? "#111827" : "white";
+  const textColor = darkMode ? "#f9fafb" : "#1a1b1e";
+  const mutedColor = darkMode ? "#9ca3af" : "dimmed";
+  const borderColor = darkMode ? "#374151" : "#e9ecef";
+
   return (
-    <Container size="xl" py="md">
-      {/* Titre + Recherche */}
+    <Container size="xl" py="md" style={{ backgroundColor: bgColor, minHeight: "100vh", borderRadius: 16 }}>
+      {/* Header */}
       <Group justify="space-between" align="center" mb={40}>
-        <Title order={2} fw={700} c="#1a1b1e">
-          Dashboard
+        <Title order={2} fw={700} c={textColor}>
+          {t.dashboard}
         </Title>
-        <Input
-          placeholder="Recherche..."
-          leftSection={<IconSearch size={18} />}
-          style={{ width: 320 }}
-          radius="lg"
-          size="md"
-          styles={{
-            input: {
-              border: "1px solid #e9ecef",
-              '&:focus': { borderColor: "#7950f2" }
-            }
-          }}
-        />
+
+        <Group gap="md">
+          <Select
+            value={language}
+            onChange={(value) => {
+              const newLanguage = value || "fr";
+              setLanguage(newLanguage);
+              localStorage.setItem("language", newLanguage);
+              window.dispatchEvent(new Event("languageChanged"));
+            }}
+            data={[
+              { value: "fr", label: "Français" },
+              { value: "en", label: "English" },
+              { value: "mg", label: "Malagasy" },
+            ]}
+            w={160}
+            radius="lg"
+          />
+
+          <ActionIcon
+            size={44}
+            radius="xl"
+            variant="gradient"
+            gradient={darkMode ? { from: "yellow", to: "orange" } : { from: "indigo", to: "cyan" }}
+            onClick={() => setDarkMode(!darkMode)}
+          >
+            {darkMode ? <IconSun size={22} /> : <IconMoonStars size={22} />}
+          </ActionIcon>
+        </Group>
       </Group>
 
-      {/* 4 CARTES  */}
+      {/* CARTES */}
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 2 }} spacing="lg" mb={50}>
-        {/* Employés enregistrés */}
-        <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
+        <Card shadow="sm" padding="lg" radius="lg" withBorder bg={cardBg} style={{ borderColor }}>
           <div className="flex justify-around items-center gap-4">
             <ActionIcon size={56} radius="xl" color="#7950f2" variant="light">
               <IconUserPlus size={28} />
             </ActionIcon>
             <Box>
-              <Text size="md" c="dimmed" tt="uppercase" fw={500}>
-                Employés enregistrés
+              <Text size="md" c={mutedColor} tt="uppercase" fw={500}>
+                {t.employees}
               </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="center">
+              <Text size="xl" fw={700} c={textColor} mt={4} ta="center">
                 2
               </Text>
             </Box>
           </div>
         </Card>
 
-        {/* Fiches importées */}
-        <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
-          <div className="flex justify-around items-center gap-4" >
-
+        <Card shadow="sm" padding="lg" radius="lg" withBorder bg={cardBg} style={{ borderColor }}>
+          <div className="flex justify-around items-center gap-4">
             <ActionIcon size={56} radius="xl" color="#9775fa" variant="light">
               <IconFileImport size={28} />
             </ActionIcon>
             <Box>
-              <Text size="md" c="dimmed" tt="uppercase" fw={500}>
-                Fiches importées
+              <Text size="md" c={mutedColor} tt="uppercase" fw={500}>
+                {t.files}
               </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="center">
+              <Text size="xl" fw={700} c={textColor} mt={4} ta="center">
                 {totalFiles}
               </Text>
             </Box>
           </div>
         </Card>
-
-        {/* Envois réussis */}
-        {/* <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
-          <div className="flex justify-around items-center gap-4" >
-            <ActionIcon size={56} radius="xl" color="#51cf66" variant="light">
-              <IconCheck size={28} />
-            </ActionIcon>
-            <Box>
-              <Text size="md" c="dimmed" tt="uppercase" fw={500}>
-                Envois réussis
-              </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="center">
-                1
-              </Text>
-            </Box>
-          </div>
-
-        </Card> */}
-
-        {/* Envois échoués */}
-        {/* <Card shadow="sm" padding="lg" radius="lg" withBorder bg="white">
-          <div className="flex justify-around items-center gap-4" >
-            <ActionIcon size={56} radius="xl" color="#ff6b6b" variant="light">
-              <IconX size={28} />
-            </ActionIcon>
-            <Box>
-              <Text size="md" c="dimmed" tt="uppercase" fw={500}>
-                Envois échoués
-              </Text>
-              <Text size="xl" fw={700} c="#1a1b1e" mt={4} align="center">
-                129898
-              </Text>
-            </Box>
-          </div>
-        </Card> */}
       </SimpleGrid>
 
       {/* GRAPHIQUES */}
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" justify="center">
-
-        {/* Graphique en ligne */}
-        <Card shadow="sm" padding="xl" radius="lg" withBorder bg="white" h="auto">
-          <p className="text-xl font-semibold mb-6" style={{ color: "#1a1b1e" }}>
-            Transaction mensuel
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <Card shadow="sm" padding="xl" radius="lg" withBorder bg={cardBg} style={{ borderColor }}>
+          <p className="text-xl font-semibold mb-6" style={{ color: textColor }}>
+            {t.monthly}
           </p>
 
-          <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
             <div style={{ width: 400, height: 300 }}>
               <LineChart />
             </div>
           </div>
         </Card>
 
-        {/* Donut */}
-        <Card shadow="sm" padding="xl" radius="lg" withBorder bg="white" ta="center">
-          <Text size="lg" fw={600} mb="xl">
-            Statut des envois (%)
+        <Card shadow="sm" padding="xl" radius="lg" withBorder bg={cardBg} ta="center" style={{ borderColor }}>
+          <Text size="lg" fw={600} mb="xl" c={textColor}>
+            {t.status}
           </Text>
 
-          <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
             <div style={{ width: 400, height: 300 }}>
               <DoughnutChart />
             </div>
           </div>
 
-          {/* Légendes */}
           <Group justify="center" mt={30} gap="xl">
             <Group gap="xs">
               <Box w={12} h={12} bg="#51cf66" style={{ borderRadius: 6 }} />
-              <Text size="sm" c="dimmed">Envoyé</Text>
+              <Text size="sm" c={mutedColor}>{t.sent}</Text>
             </Group>
             <Group gap="xs">
               <Box w={12} h={12} bg="#ffc107" style={{ borderRadius: 6 }} />
-              <Text size="sm" c="dimmed">En attente</Text>
+              <Text size="sm" c={mutedColor}>{t.pending}</Text>
             </Group>
             <Group gap="xs">
               <Box w={12} h={12} bg="#ff6b6b" style={{ borderRadius: 6 }} />
-              <Text size="sm" c="dimmed">Échec</Text>
+              <Text size="sm" c={mutedColor}>{t.failed}</Text>
             </Group>
           </Group>
         </Card>
-
       </SimpleGrid>
-
     </Container>
   );
 }
