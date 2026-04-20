@@ -398,5 +398,6 @@ def transaction_stats(request):
     return Response({
         'labels': labels,
         'data': data,
-        'total': total
+        'total': total,
+        'total_employes': Employe.objects.filter(actif=True).count()
     })

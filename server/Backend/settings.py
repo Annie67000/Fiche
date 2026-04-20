@@ -82,20 +82,35 @@ from urllib.parse import urlparse
 
 # Check if DATABASE_URL is set (for Docker/production)
 database_url = os.environ.get('DATABASE_URL')
+database_url_readonly = os.environ.get('DATABASE_URL_READONLY')
 
 if database_url:
-    # Parse the DATABASE_URL for PostgreSQL
+    # Parse the DATABASE_URL for PostgreSQL (admin user)
     result = urlparse(database_url)
+
+    # Configure primary database (admin - full access)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': result.path[1:],  # Remove the leading /
+            'NAME': result.path[1:],
             'USER': result.username,
             'PASSWORD': result.password,
             'HOST': result.hostname,
             'PORT': result.port,
         }
     }
+
+    # Configure readonly database (user - select/insert only)
+    if database_url_readonly:
+        result_readonly = urlparse(database_url_readonly)
+        DATABASES['readonly'] = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': result_readonly.path[1:],
+            'USER': result_readonly.username,
+            'PASSWORD': result_readonly.password,
+            'HOST': result_readonly.hostname,
+            'PORT': result_readonly.port,
+        }
 else:
     # Fallback to SQLite for local development
     DATABASES = {

@@ -6,6 +6,7 @@ import DoughnutChart from "../components/chart/doughnut-chart";
 
 export default function Home() {
   const [totalFiles, setTotalFiles] = useState(0);
+  const [totalEmployes, setTotalEmployes] = useState(0);
   const [language, setLanguage] = useState(localStorage.getItem("language") || "fr");
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const dark = colorScheme === 'dark';
@@ -16,6 +17,7 @@ export default function Home() {
       .then((res) => res.json())
       .then((result) => {
         setTotalFiles(result.total || 0);
+        setTotalEmployes(result.total_employes || 0);
       })
       .catch((err) => console.error("Erreur fetch:", err));
   }, []);
@@ -125,7 +127,7 @@ export default function Home() {
                 {t.employees}
               </Text>
               <Text size="xl" fw={700} c={textColor} mt={4} ta="center">
-                2
+                {totalEmployes}
               </Text>
             </Box>
           </div>

@@ -9,6 +9,7 @@ services:
       POSTGRES_PASSWORD: annie_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "15432:5432"
     healthcheck:
@@ -29,6 +30,7 @@ services:
     environment:
       - DEBUG=1
       - DATABASE_URL=postgresql://annie_user:annie_password@postgres:5432/annie_db
+      - DATABASE_URL_READONLY=postgresql://payroll_user:payroll_user_pass@postgres:5432/annie_db
       - SECRET_KEY=django-insecure-rsadyeq4lg5_1+7(n+w=0v$34lpue#m_wvv7u*q!b@eklcqg0w
       - PDF_OUTPUT_PATH=/app/pdf_output
     volumes:
