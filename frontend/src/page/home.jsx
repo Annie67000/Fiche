@@ -1,4 +1,4 @@
-import { Card, Text, Group, SimpleGrid, Title, Container, ActionIcon, Box, Select } from "@mantine/core";
+import { Card, Text, Group, SimpleGrid, Title, Container, ActionIcon, Box, Select, useMantineColorScheme } from "@mantine/core";
 import { IconUserPlus, IconFileImport, IconMoonStars, IconSun } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import LineChart from "../components/chart/line-chart";
@@ -7,7 +7,8 @@ import DoughnutChart from "../components/chart/doughnut-chart";
 export default function Home() {
   const [totalFiles, setTotalFiles] = useState(0);
   const [language, setLanguage] = useState(localStorage.getItem("language") || "fr");
-  const [darkMode, setDarkMode] = useState(false);
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const dark = colorScheme === 'dark';
 
   useEffect(() => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8003";
@@ -68,14 +69,14 @@ export default function Home() {
 
   const t = translations[language] || translations.fr;
 
-  const bgColor = darkMode ? "#1f2937" : "#f8f9fa";
-  const cardBg = darkMode ? "#111827" : "white";
-  const textColor = darkMode ? "#f9fafb" : "#1a1b1e";
-  const mutedColor = darkMode ? "#9ca3af" : "dimmed";
-  const borderColor = darkMode ? "#374151" : "#e9ecef";
+  const bgColor = dark ? "dark.8" : "gray.0";
+  const cardBg = dark ? "dark.6" : "white";
+  const textColor = dark ? "gray.0" : "dark.8";
+  const mutedColor = dark ? "gray.4" : "dimmed";
+  const borderColor = dark ? "dark.4" : "gray.3";
 
   return (
-    <Container size="xl" py="md" style={{ backgroundColor: bgColor, minHeight: "100vh", borderRadius: 16 }}>
+    <Container size="xl" py="md" bg={bgColor} style={{ minHeight: "100vh", borderRadius: 16 }}>
       {/* Header */}
       <Group justify="space-between" align="center" mb={40}>
         <Title order={2} fw={700} c={textColor}>
@@ -104,10 +105,10 @@ export default function Home() {
             size={44}
             radius="xl"
             variant="gradient"
-            gradient={darkMode ? { from: "yellow", to: "orange" } : { from: "indigo", to: "cyan" }}
-            onClick={() => setDarkMode(!darkMode)}
+            gradient={dark ? { from: "yellow", to: "orange" } : { from: "indigo", to: "cyan" }}
+            onClick={() => toggleColorScheme()}
           >
-            {darkMode ? <IconSun size={22} /> : <IconMoonStars size={22} />}
+            {dark ? <IconSun size={22} /> : <IconMoonStars size={22} />}
           </ActionIcon>
         </Group>
       </Group>

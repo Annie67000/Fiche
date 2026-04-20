@@ -4,10 +4,10 @@ import '@mantine/core/styles.css';
 
 import '@mantine/dates/styles.css';
 
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, useMantineColorScheme, Box } from '@mantine/core';
+import { shadcnTheme } from './theme/theme';
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Box } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';        // ← AJOUTÉ
 import LoginPage from './components/login.jsx';
 import Sidebar from './components/sidebar.jsx';  // ← vérifie que ce chemin est bon
@@ -17,6 +17,26 @@ import Employes from './page/Employes.jsx';
 import { PaySlip } from './components/pay-slip.jsx';
 import PdfUpload from './components/pdf-upload.jsx';
 
+function MainLayout({ children }) {
+  const { colorScheme } = useMantineColorScheme();
+  const dark = colorScheme === 'dark';
+
+  return (
+    <Box style={{ display: 'flex', minHeight: '100vh' }}>
+      <Sidebar />
+      <Box
+        ml={280}
+        w="calc(100% - 280px)"
+        bg={dark ? 'dark.8' : 'gray.0'}
+        p="xl"
+        style={{ minHeight: '100vh' }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
 export default function App() {
   function PrivateRoute({ children }) {
     const token = localStorage.getItem('access_token');
@@ -24,8 +44,8 @@ export default function App() {
   }
 
   return (
-    <MantineProvider>
-      <Notifications position="top-right" />                {/* ← AJOUTÉ (les notifications apparaissent en haut à droite) */}
+    <MantineProvider theme={shadcnTheme} defaultColorScheme="light">
+      <Notifications position="top-right" />
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -33,23 +53,14 @@ export default function App() {
             path="/*"
             element={
               <PrivateRoute>
-                <Box style={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box
-                    ml={280}
-                    w="calc(100% - 280px)"
-                    bg="#f8f9fa"
-                    p="xl"
-                    style={{ minHeight: '100vh' }}
-                  >
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/employes" element={<Employes />} />
-                      <Route path="/pdf-upload" element={<PdfUpload />} />
-                      <Route path="/verification" element={<PayrollVerificationPage />} />
-                    </Routes>
-                  </Box>
-                </Box>
+                <MainLayout>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/employes" element={<Employes />} />
+                    <Route path="/pdf-upload" element={<PdfUpload />} />
+                    <Route path="/verification" element={<PayrollVerificationPage />} />
+                  </Routes>
+                </MainLayout>
               </PrivateRoute>
             }
           />
