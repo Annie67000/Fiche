@@ -275,7 +275,7 @@ class LoginView(APIView):
             return Response({'error': 'Invalid credentials'},
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        user, employe = sync_user_from_ldap(ldap_attrs)
+        user, employe, _ = sync_user_from_ldap(ldap_attrs)
         if not user.is_active:
             return Response({'error': 'Account disabled'},
                             status=status.HTTP_401_UNAUTHORIZED)

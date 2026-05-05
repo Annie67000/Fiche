@@ -68,6 +68,36 @@ def authenticate_ldap(email, password):
     return result
 
 
+def fetch_all_ldap_users(extra_filter='(mail=*)'):
+    """Return a list of attribute dicts for every LDAP entry matching extra_filter.
+
+    Default filter requires a mail attribute since email is the login identifier.
+    Raises LDAPUnavailable on transport/bind failure.
+    """
+    attrs = list(settings.LDAP_ATTR_MAP.keys())
+    try:
+        conn = _connect(settings.LDAP_BIND_DN, settings.LDAP_BIND_PASSWORD)
+    except LDAPException as exc:
+        raise LDAPUnavailable(str(exc)) from exc
+
+    results = []
+    try:
+        conn.search(
+            search_base=settings.LDAP_USER_SEARCH_BASE,
+            search_filter=extra_filter,
+            attributes=attrs,
+            paged_size=500,
+        )
+        for entry in conn.entries:
+            record = {key: _first(entry, key) for key in attrs}
+            record['dn'] = entry.entry_dn
+            record['email'] = record.get('mail')
+            results.append(record)
+    finally:
+        conn.unbind()
+    return results
+
+
 def _first(entry, attr):
     if attr not in entry:
         return None
@@ -79,7 +109,11 @@ def _first(entry, attr):
 
 @transaction.atomic
 def sync_user_from_ldap(attrs):
-    """Upsert auth_user + Employe from LDAP attributes. Returns (user, employe)."""
+    """Upsert auth_user + Employe from LDAP attributes.
+
+    Returns (user, employe, created) where created is True iff the Employe row
+    was newly inserted in this call.
+    """
     email = (attrs.get('email') or attrs.get('mail') or '').strip().lower()
     uid = attrs.get('uid') or (email.split('@')[0] if email else None)
     matricule = attrs.get('employeeNumber') or uid
@@ -101,7 +135,7 @@ def sync_user_from_ldap(attrs):
     user.set_unusable_password()
     user.save()
 
-    employe, _ = Employe.objects.update_or_create(
+    employe, created = Employe.objects.update_or_create(
         user=user,
         defaults={
             'matricule': matricule or (uid or email),
@@ -109,8 +143,8 @@ def sync_user_from_ldap(attrs):
             'prenom': given_name or user.first_name,
             'email': email or user.email,
             'departement': attrs.get('departmentNumber') or attrs.get('ou') or '',
-            'poste': attrs.get('title') or '',
+            'poste': attrs.get('employeeType') or attrs.get('title') or '',
             'actif': True,
         },
     )
-    return user, employe
+    return user, employe, created

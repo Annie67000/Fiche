@@ -256,4 +256,5 @@ LDAP_ATTR_MAP = {
     'departmentNumber': 'departmentNumber',
     'ou': 'ou',
     'title': 'title',
+    'employeeType': 'employeeType',
 }
