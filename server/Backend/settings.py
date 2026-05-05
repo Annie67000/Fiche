@@ -224,3 +224,6 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+CELERY_BROKER_URL= 'redis://redis:6379/1'
+CELERY_RESULT_BACKEND= 'redis://redis:6379/1'

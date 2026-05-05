@@ -33,6 +33,8 @@ services:
       - DATABASE_URL_READONLY=postgresql://payroll_user:payroll_user_pass@postgres:5432/annie_db
       - SECRET_KEY=django-insecure-rsadyeq4lg5_1+7(n+w=0v$34lpue#m_wvv7u*q!b@eklcqg0w
       - PDF_OUTPUT_PATH=/app/pdf_output
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
     volumes:
       - ./server:/app
       - ./server/media:/app/media
@@ -42,8 +44,35 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - payslip_network
+
+  # Celery Worker for Backend (User Sync, etc.)
+  backend-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: payslip_backend_worker
+    command: celery -A Backend worker -l info --concurrency=4
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgresql://annie_user:annie_password@postgres:5432/annie_db
+      - DATABASE_URL_READONLY=postgresql://payroll_user:payroll_user_pass@postgres:5432/annie_db
+      - SECRET_KEY=django-insecure-rsadyeq4lg5_1+7(n+w=0v$34lpue#m_wvv7u*q!b@eklcqg0w
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - ./server:/app
+      - ./server/media:/app/media
+    depends_on:
+      - redis
+      - postgres
+      - backend
+    networks:
+      - payslip_network
+    restart: unless-stopped
 
   # Frontend Service
   frontend:
