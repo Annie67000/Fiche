@@ -10,7 +10,8 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
+
+from .ldap_auth import LDAPUnavailable, authenticate_ldap, sync_user_from_ldap
 
 # Création d'un API avec méthode GET et 'AllowAny' pour la permission (Permettre tout)
 @api_view(['GET'])
@@ -257,54 +258,38 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        identifiant = request.data.get('username')  # Can be matricule or email
+        email = request.data.get('username')
         password = request.data.get('password')
 
-        if not identifiant or not password:
+        if not email or not password:
             return Response({'error': 'Username and password required'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        user = None
-        # Try to find user by matricule
         try:
-            employe = Employe.objects.get(matricule=identifiant, actif=True)
-            user = employe.user
-        except Employe.DoesNotExist:
-            pass
+            ldap_attrs = authenticate_ldap(email, password)
+        except LDAPUnavailable:
+            return Response({'error': 'Authentication service unavailable'},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        # If not found by matricule, try by email
-        if not user:
-            try:
-                user = authenticate(email=identifiant, password=password)
-            except:
-                pass
-
-        # If still not found, try username authentification
-        if not user:
-            user = authenticate(username=identifiant, password=password)
-
-        if user is None or not user.is_active:
+        if not ldap_attrs:
             return Response({'error': 'Invalid credentials'},
                             status=status.HTTP_401_UNAUTHORIZED)
 
+        user, employe = sync_user_from_ldap(ldap_attrs)
+        if not user.is_active:
+            return Response({'error': 'Account disabled'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
         refresh = RefreshToken.for_user(user)
-        
-        employe = None
-        employe_data = None
-        try:
-            employe = Employe.objects.get(user=user, actif=True)
-            employe_data = {
-                'matricule': employe.matricule,
-                'nom': employe.nom,
-                'prenom': employe.prenom,
-                'email': employe.email,
-                'departement': employe.departement,
-                'poste': employe.poste,
-            }
-            matricule = employe.matricule
-        except Employe.DoesNotExist:
-            matricule = None
-        
+        employe_data = {
+            'matricule': employe.matricule,
+            'nom': employe.nom,
+            'prenom': employe.prenom,
+            'email': employe.email,
+            'departement': employe.departement,
+            'poste': employe.poste,
+        }
+
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
@@ -316,7 +301,7 @@ class LoginView(APIView):
                 'last_name': user.last_name,
                 'is_staff': user.is_staff,
             },
-            'matricule': matricule,
+            'matricule': employe.matricule,
             'employe': employe_data,
         })
 

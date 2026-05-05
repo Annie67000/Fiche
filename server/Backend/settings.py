@@ -10,10 +10,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from urllib.parse import urlparse
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -76,9 +82,6 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-import os
-from urllib.parse import urlparse
 
 # Check if DATABASE_URL is set (for Docker/production)
 database_url = os.environ.get('DATABASE_URL')
@@ -227,3 +230,30 @@ SIMPLE_JWT = {
 
 CELERY_BROKER_URL= 'redis://redis:6379/1'
 CELERY_RESULT_BACKEND= 'redis://redis:6379/1'
+
+
+# --- LDAP authentication ---
+def _derive_ldap_uri():
+    explicit = os.environ.get('LDAP_SERVER_URI')
+    if explicit:
+        return explicit
+    raw = os.environ.get('LDAP_URL', '')
+    host = urlparse(raw).hostname if raw else None
+    return f'ldap://{host}:389' if host else 'ldap://localhost:389'
+
+LDAP_SERVER_URI = _derive_ldap_uri()
+LDAP_BIND_DN = os.environ.get('LDAP_BIND_DN', '').strip("'\"")
+LDAP_BIND_PASSWORD = os.environ.get('LDAP_BIND_PASSWORD', '')
+LDAP_USER_SEARCH_BASE = os.environ.get('LDAP_USER_SEARCH_BASE', 'dc=blueline,dc=mg')
+LDAP_USER_SEARCH_FILTER = os.environ.get('LDAP_USER_SEARCH_FILTER', '(mail={email})')
+LDAP_ATTR_MAP = {
+    'uid': 'uid',
+    'mail': 'mail',
+    'givenName': 'givenName',
+    'sn': 'sn',
+    'cn': 'cn',
+    'employeeNumber': 'employeeNumber',
+    'departmentNumber': 'departmentNumber',
+    'ou': 'ou',
+    'title': 'title',
+}
