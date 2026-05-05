@@ -30,7 +30,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"✗ Redis connection failed: {e}"))
             self.redis_client = None
 
-        # 2. Connect to source BPMDB and fetch active users
+        # 2. Connect to source BPMDB and fetch active users with registration number
         source_users = self.fetch_bpm_active_users()
         if not source_users:
             self.stdout.write(self.style.WARNING("No active users found in BPMDB"))
@@ -68,7 +68,7 @@ class Command(BaseCommand):
         self.stdout.write("=" * 50)
 
     def fetch_bpm_active_users(self):
-        """Fetch all active users from BPMDB auth_user table"""
+        """Fetch all active users from BPMDB auth_user table with registration_number from dashboard_profile"""
         try:
             # Read source DB config from .env
             conn = psycopg2.connect(
@@ -81,12 +81,14 @@ class Command(BaseCommand):
             self.stdout.write("✓ BPMDB connected")
 
             with conn.cursor() as cursor:
-                # Only fetch active users as requested
+                # Fetch active users with registration_number from dashboard_profile
                 cursor.execute("""
-                    SELECT id, username, first_name, last_name, email,
-                           is_active, is_staff, date_joined, last_login
-                    FROM auth_user 
-                    WHERE is_active = TRUE
+                    SELECT au.id, au.username, au.first_name, au.last_name, au.email,
+                           au.is_active, au.is_staff, au.date_joined, au.last_login,
+                           dp.registration_number
+                    FROM auth_user au
+                    LEFT JOIN dashboard_profile dp ON au.id = dp.user_id
+                    WHERE au.is_active = TRUE
                 """)
                 columns = [desc[0] for desc in cursor.description]
                 users = [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -127,11 +129,13 @@ class Command(BaseCommand):
             },
         )
 
-        # 4. Sync Employe profile
+        # 4. Sync Employe profile with matricule from registration_number
+        registration_number = user_data.get("registration_number") or ""
+        
         Employe.objects.update_or_create(
             user=user,
             defaults={
-                "matricule": user.username,
+                "matricule": registration_number or "UNKNOWN",  # Use registration_number if available, else username
                 "nom": user.last_name or user.username,
                 "prenom": user.first_name or "",
                 "email": user.email or "",
