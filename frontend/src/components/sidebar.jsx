@@ -85,7 +85,7 @@ export default function Sidebar() {
           {employe && (
             <Group gap="xs" mt="xs">
               <Badge leftSection={<IconBadge size={12} />} variant="light" color="white" c="green">
-                {employe.matricule}
+                Matricule : {employe.matricule}
               </Badge>
             </Group>
           )}

@@ -160,8 +160,12 @@ function LoginPage() {
               <IconLock size={28} />
             </ThemeIcon>
             <Title order={2} c="#1e293b" fw={600}>Connexion</Title>
-            <Text c="dimmed" size="sm" ta="center">
+            <Text c="dimmed" size="md" ta="center">
               Entrez vos identifiants pour accéder à votre espace
+            </Text>
+
+            <Text c="pink" size="sm" ta="center" className='flex items-center justify-center gap-1 mt-2'>
+              <IconLock size={16} /> Vos accès sont les mêmes que BPM
             </Text>
           </Stack>
 
@@ -188,10 +192,10 @@ function LoginPage() {
                 size="md"
               />
               
-              <Group position="apart">
+              {/* <Group position="apart">
                 <Checkbox label="Se souvenir de moi" size="sm" />
                 <Anchor href="#" size="sm" c="green">Mot de passe oublié ?</Anchor>
-              </Group>
+              </Group> */}
               
               <Button
                 fullWidth
@@ -206,12 +210,12 @@ function LoginPage() {
             </Stack>
           </form>
 
-          <Divider label="OU" labelPosition="center" my="lg" />
+          {/* <Divider label="OU" labelPosition="center" my="lg" />
 
           <Text align="center" size="sm" c="dimmed">
             Vous n'avez pas de compte ?{' '}
             <Anchor href="/inscription" weight={600} c="green">Créer un compte</Anchor>
-          </Text>
+          </Text> */}
         </Paper>
       </Box>
     </Box>
