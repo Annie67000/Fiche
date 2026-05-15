@@ -87,7 +87,7 @@ function LoginPage() {
 
   const features = [
     { icon: IconFileText, title: 'Gestion des Fiches', desc: 'Organisez et gérez facilement les bulletins de paie' },
-    { icon: IconShieldCheck, title: 'Sécurisé', desc: 'Stockage chiffré et protégé de vos documents' },
+    { icon: IconShieldCheck, title: 'Sécurisé', desc: 'Stockage chiffré et sécurisé de vos documents. Vos données sont conservées de manière confidentielle et restent accessibles uniquement aux personnes autorisées.' },
     { icon: IconClock, title: 'Accès Rapide', desc: 'Récupérez vos bulletins en un clic' },
   ];
 
