@@ -4,12 +4,11 @@ import { useDropzone } from 'react-dropzone';
 import { 
   Container, Title, Text, Card, Group, Button, Box, 
   ActionIcon, Badge, Progress, Table, Stack, ThemeIcon, 
-  SimpleGrid, Stepper, CopyButton, Tooltip, Avatar, RingProgress,
-  Divider, Modal, ScrollArea
+  SimpleGrid, Stepper, Avatar, RingProgress,
+  Divider, ScrollArea
 } from '@mantine/core';
 import { 
-  IconUpload, IconFile, IconX, IconDownload, IconEye, 
-  IconCopy, IconCheck, IconCloudUpload, IconFileSpreadsheet,
+  IconUpload, IconFile, IconX, IconCheck, IconCloudUpload, IconFileSpreadsheet,
   IconChecklist, IconClock, IconAlertCircle, IconFileCheck,
   IconTrash, IconPlayerPlay, IconFileAnalytics
 } from '@tabler/icons-react';
@@ -23,7 +22,6 @@ const PdfUpload = () => {
   const [status, setStatus] = useState(null);
   const [processedPaths, setProcessedPaths] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [viewingPdf, setViewingPdf] = useState(null);
   const [processDetail, setProcessDetail] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
@@ -163,7 +161,6 @@ const PdfUpload = () => {
     setStatus(null);
     setProcessedPaths([]);
     setLoading(false);
-    setViewingPdf(null);
     setProcessDetail(null);
     setUploadProgress(0);
     setCurrentStep(0);
@@ -384,7 +381,6 @@ const PdfUpload = () => {
                         <tr>
                           <th>#</th>
                           <th>Employé</th>
-                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -402,43 +398,6 @@ const PdfUpload = () => {
                                 </Box>
                               </Group>
                             </td>
-                            <td>
-                              <Group gap="xs">
-                                <Tooltip label="Visualiser">
-                                  <ActionIcon 
-                                    color="blue" 
-                                    variant="light" 
-                                    onClick={() => setViewingPdf(item.path)}
-                                  >
-                                    <IconEye size={16} />
-                                  </ActionIcon>
-                                </Tooltip>
-                                <CopyButton value={`${API_BASE_URL}/media/${item.path}`}>
-                                  {({ copied, copy }) => (
-                                    <Tooltip label={copied ? 'Copié!' : 'Copier lien'}>
-                                      <ActionIcon 
-                                        color={copied ? 'teal' : 'gray'} 
-                                        variant="light" 
-                                        onClick={copy}
-                                      >
-                                        {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                                      </ActionIcon>
-                                    </Tooltip>
-                                  )}
-                                </CopyButton>
-                                <Tooltip label="Télécharger">
-                                  <ActionIcon 
-                                    color="green" 
-                                    variant="light"
-                                    component="a"
-                                    href={`${API_BASE_URL}/media/${item.path}`}
-                                    download={item.fileName}
-                                  >
-                                    <IconDownload size={16} />
-                                  </ActionIcon>
-                                </Tooltip>
-                              </Group>
-                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -449,29 +408,6 @@ const PdfUpload = () => {
             </Stack>
           </Card>
         </SimpleGrid>
-
-        <Modal
-          opened={!!viewingPdf}
-          onClose={() => setViewingPdf(null)}
-          title={
-            <Group gap="sm">
-              <IconFileSpreadsheet size={20} />
-              <Text fw={600}>{viewingPdf?.split('/').pop()}</Text>
-            </Group>
-          }
-          size="90%"
-          padding="xs"
-        >
-          <Box style={{ height: '75vh' }}>
-            <iframe
-              src={viewingPdf ? `${API_BASE_URL}/media/${viewingPdf}` : ''}
-              width="100%"
-              height="100%"
-              style={{ border: 'none', borderRadius: 8 }}
-              title="PDF Viewer"
-            />
-          </Box>
-        </Modal>
       </Stack>
     </Container>
   );
