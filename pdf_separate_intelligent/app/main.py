@@ -1,5 +1,5 @@
-﻿from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
-from fastapi.responses import FileResponse
+﻿from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Query
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -7,8 +7,10 @@ import tempfile
 import os
 import httpx
 import jwt
+import io
 from .tasks import process_pdf_task
 from .crypto import encrypt_file, decrypt_to_memory
+from .report import load_report_results, generate_csv_report, generate_xlsx_report
 
 app = FastAPI(title="Pay Slip OCR Processor API")
 security = HTTPBearer()
@@ -73,7 +75,6 @@ async def process_pdf(file: UploadFile = File(...)):
     import uuid
     file_id = str(uuid.uuid4())
     input_pdf_path = f"uploads/{file.filename}.pdf"
-
 
     print(f"DEBUG: Received file {file.filename}, saving to {input_pdf_path}")
 
@@ -249,3 +250,53 @@ async def get_secure_file(folder_name: str, folder_path: str, credentials: HTTPA
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error decrypting file: {str(e)}")
+
+
+# ---- SECTION CORRIGÉE POUR L'EXPORTATION ----
+@app.get("/api/v1/export-report/")
+async def export_report(
+    task_id: str = Query(..., description="ID de la tâche Celery à exporter"),
+    format: str = Query("xlsx", regex="^(xlsx|csv)$"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Generate and download an Import & Reconciliation Report for a processed task.
+    Requires admin (is_staff) privileges.
+    Formats: xlsx (default) or csv
+    """
+    user_data = await verify_token(credentials)
+    if not user_data.get("is_staff", False):
+        raise HTTPException(status_code=403, detail="Admin role required")
+
+    task = process_pdf_task.AsyncResult(task_id)
+    if task.state != 'SUCCESS':
+        raise HTTPException(status_code=400, detail="Task is not completed or failed")
+
+    output_dir = task.info.get('output_dir')
+    if not output_dir or not os.path.exists(output_dir):
+        raise HTTPException(status_code=404, detail="Processed output directory not found")
+
+    report_data = load_report_results(output_dir)
+    if not report_data:
+        raise HTTPException(status_code=404, detail="Report results not found. The task may have been processed before the report feature was added.")
+
+    filename_safe = os.path.basename(output_dir)
+
+    if format == "csv":
+        csv_content = generate_csv_report(report_data)
+        return StreamingResponse(
+            io.StringIO(csv_content),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename=rapport_importation_{filename_safe}.csv"
+            }
+        )
+    else:
+        xlsx_bytes = generate_xlsx_report(report_data)
+        return StreamingResponse(
+            io.BytesIO(xlsx_bytes),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename=rapport_importation_{filename_safe}.xlsx"
+            }
+        )

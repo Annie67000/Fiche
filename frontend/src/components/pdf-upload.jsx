@@ -10,7 +10,8 @@ import {
 import { 
   IconUpload, IconFile, IconX, IconCheck, IconCloudUpload, IconFileSpreadsheet,
   IconChecklist, IconClock, IconAlertCircle, IconFileCheck,
-  IconTrash, IconPlayerPlay, IconFileAnalytics
+  IconTrash, IconPlayerPlay, IconFileAnalytics,
+  IconFileDownload, IconTable
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 
@@ -25,6 +26,7 @@ const PdfUpload = () => {
   const [processDetail, setProcessDetail] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
@@ -147,6 +149,50 @@ const PdfUpload = () => {
         setLoading(false);
       }
     }, 5000);
+  };
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('access_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const handleExportReport = async (format) => {
+    if (!taskId) return;
+    setExportLoading(true);
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/v1/export-report/?task_id=${taskId}&format=${format}`,
+        { headers: getAuthHeaders(), responseType: 'blob' }
+      );
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const ext = format === 'csv' ? 'csv' : 'xlsx';
+      link.download = `rapport_importation_${taskId.slice(0, 8)}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      notifications.show({
+        title: 'Rapport exporté',
+        message: `Le rapport au format ${ext.toUpperCase()} a été téléchargé.`,
+        color: 'green',
+        icon: <IconFileDownload />,
+      });
+    } catch (error) {
+      const errMsg = error.response?.data?.error
+        || error.response?.data?.detail
+        || 'Échec de l\'export du rapport.';
+      notifications.show({
+        title: 'Erreur',
+        message: errMsg,
+        color: 'red',
+        icon: <IconAlertCircle />,
+      });
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   const removeFile = () => {
@@ -296,29 +342,65 @@ const PdfUpload = () => {
                 </Box>
               )}
 
-              <Group grow>
-                <Button
-                  size="md"
-                  onClick={handleUpload}
-                  disabled={!selectedFile || loading}
-                  loading={loading && currentStep === 1}
-                  leftSection={<IconUpload size={20} />}
-                  color="green"
-                  variant="filled"
-                >
-                  {loading ? 'Traitement...' : 'Démarrer'}
-                </Button>
-                {processedPaths.length > 0 && (
+              {currentStep < 3 ? (
+                <Group grow>
                   <Button
                     size="md"
-                    variant="light"
-                    onClick={resetAll}
-                    leftSection={<IconPlayerPlay size={20} />}
+                    onClick={handleUpload}
+                    disabled={!selectedFile || loading}
+                    loading={loading && currentStep === 1}
+                    leftSection={<IconUpload size={20} />}
+                    color="green"
+                    variant="filled"
                   >
-                    Nouveau
+                    {loading ? 'Traitement...' : 'Démarrer'}
                   </Button>
-                )}
-              </Group>
+                </Group>
+              ) : (
+                <Stack gap="sm">
+                  <Group grow>
+                    <Button
+                      size="md"
+                      variant="light"
+                      onClick={resetAll}
+                      leftSection={<IconPlayerPlay size={20} />}
+                    >
+                      Nouvel import
+                    </Button>
+                  </Group>
+                  <Card withBorder radius="md" p="sm" bg="green.0">
+                    <Text size="sm" fw={600} mb="xs" c="green.8">
+                      <IconFileDownload size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                      Rapport d'Importation & Réconciliation
+                    </Text>
+                    <Text size="xs" c="dimmed" mb="sm">
+                      Exportez le rapport récapitulatif avec la comparaison des fiches attendues vs traitées, le statut par matricule et les éventuelles erreurs OCR.
+                    </Text>
+                    <Group grow>
+                      <Button
+                        size="sm"
+                        variant="filled"
+                        color="green"
+                        onClick={() => handleExportReport('xlsx')}
+                        loading={exportLoading}
+                        leftSection={<IconTable size={16} />}
+                      >
+                        Excel (.xlsx)
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        color="green"
+                        onClick={() => handleExportReport('csv')}
+                        loading={exportLoading}
+                        leftSection={<IconFileSpreadsheet size={16} />}
+                      >
+                        CSV (.csv)
+                      </Button>
+                    </Group>
+                  </Card>
+                </Stack>
+              )}
             </Stack>
           </Card>
 

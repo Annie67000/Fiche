@@ -386,3 +386,261 @@ def transaction_stats(request):
         'total': total,
         'total_employes': Employe.objects.filter(actif=True).count()
     })
+
+
+# ==================================================================
+# VERSION CORRIGÉE : EXPORT REPORT (Mivantana avy amin'ny Django)
+# ==================================================================
+import io
+import re
+import json
+import os
+import csv as csv_module
+from django.http import HttpResponse
+
+FILENAME_PATTERN = re.compile(r'^(\d+)_.+\.enc$')
+
+class ExportReportView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # 1. Fanamarinana ho an'ny Administrateur
+        if not request.user.is_staff:
+            return Response(
+                {'error': 'Seuls les administrateurs peuvent exporter le rapport.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 2. Fandraisana ny paramètres query avy amin'ny React
+        task_id = request.query_params.get('task_id')
+        fmt = request.query_params.get('format', 'xlsx')
+
+        if not task_id:
+            return Response(
+                {'error': 'Le paramètre task_id est requis.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 3. Famolavolana ny lalana mankany amin'ny dossiers
+        output_path = os.environ.get(
+            'PDF_OUTPUT_PATH',
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                         'pdf_separate_intelligent', 'output')
+        )
+
+        batch_dir = self._resolve_batch_dir(output_path, task_id)
+        if not batch_dir:
+            return Response(
+                {'error': 'Aucun dossier de traitement trouvé pour ce task_id. Vérifiez que le traitement est terminé.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # 4. Fikarakarana ny mombamomba ny mpiasa
+        employees = self._build_employee_data(batch_dir)
+
+        total_expected = sum(emp['total'] for emp in employees.values())
+        total_processed = sum(emp['success'] for emp in employees.values())
+        total_failed = sum(emp['failed'] for emp in employees.values())
+        safe_id = task_id[:8] if len(task_id) > 8 else task_id
+
+        # 5. Fandefasana ny fichier mifandraika amin'ny format nangatahana
+        if fmt == 'csv':
+            return self._generate_csv(employees, total_expected, total_processed, total_failed, safe_id)
+        return self._generate_xlsx(employees, total_expected, total_processed, total_failed, safe_id)
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+    def _resolve_batch_dir(self, output_path, task_id):
+        """Find the batch output directory for this task_id."""
+        if not os.path.exists(output_path):
+            return None
+        for dir_name in os.listdir(output_path):
+            if task_id in dir_name:
+                dir_path = os.path.join(output_path, dir_name)
+                if os.path.isdir(dir_path):
+                    return dir_path
+        return None
+
+    def _parse_enc_filename(self, filename):
+        m = FILENAME_PATTERN.match(filename)
+        if m:
+            return m.group(1)
+        if filename.startswith('UNKNOWN_'):
+            return filename.replace('.enc', '')
+        return None
+
+    def _build_employee_data(self, batch_dir):
+        json_path = os.path.join(batch_dir, '_report_results.json')
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                report_data = json.load(f)
+            return report_data.get("employees", {})
+
+        employees = {}
+        for emp_dir_name in os.listdir(batch_dir):
+            emp_dir_path = os.path.join(batch_dir, emp_dir_name)
+            if not os.path.isdir(emp_dir_path):
+                continue
+
+            enc_files = [f for f in os.listdir(emp_dir_path) if f.lower().endswith('.enc')]
+            if not enc_files:
+                continue
+
+            matricule = self._parse_enc_filename(enc_files[0]) or emp_dir_name
+
+            emp_entry = {
+                'matricule': matricule,
+                'nom': matricule,
+                'prenom': '',
+                'files': [],
+                'total': 0,
+                'success': 0,
+                'failed': 0,
+            }
+
+            for enc_file in sorted(enc_files):
+                pdf_name = enc_file.replace('.enc', '.pdf')
+                file_entry = {
+                    'filename': pdf_name,
+                    'status': 'Success',
+                    'error': None,
+                }
+                emp_entry['files'].append(file_entry)
+                emp_entry['total'] += 1
+                emp_entry['success'] += 1
+
+            employees[matricule] = emp_entry
+
+        return employees
+
+    def _generate_xlsx(self, employees, total_expected, total_processed, total_failed, safe_id):
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Rapport Importation"
+
+        hdr_font = Font(bold=True, color="FFFFFF", size=11)
+        hdr_fill = PatternFill(start_color="166534", end_color="166534", fill_type="solid")
+        title_font = Font(bold=True, size=14, color="166534")
+        sub_font = Font(bold=True, size=11, color="374151")
+        ok_font = Font(color="166534", bold=True)
+        err_font = Font(color="DC2626", bold=True)
+        ok_fill = PatternFill(start_color="F0FDF4", end_color="F0FDF4", fill_type="solid")
+        er_fill = PatternFill(start_color="FEF2F2", end_color="FEF2F2", fill_type="solid")
+        bdr = Border(
+            left=Side(style='thin', color='D1D5DB'),
+            right=Side(style='thin', color='D1D5DB'),
+            top=Side(style='thin', color='D1D5DB'),
+            bottom=Side(style='thin', color='D1D5DB'),
+        )
+
+        # Title
+        ws.merge_cells('A1:D1')
+        ws['A1'] = "Rapport d'Importation & Réconciliation"
+        ws['A1'].font = title_font
+        ws['A1'].alignment = Alignment(horizontal='center')
+        ws.row_dimensions[1].height = 30
+
+        # Summary
+        ws.merge_cells('A3:B3')
+        ws['A3'] = "Résumé de la réconciliation"
+        ws['A3'].font = sub_font
+        summary = [
+            ("Total attendu (pages dans le PDF)", total_expected),
+            ("Total traités avec succès", total_processed),
+            ("Total en échec", total_failed),
+            ("Taux de succès", f"{total_processed / total_expected * 100:.1f}%" if total_expected > 0 else "N/A"),
+        ]
+        for i, (label, value) in enumerate(summary):
+            row = 4 + i
+            ws.cell(row=row, column=1, value=label).font = Font(bold=True)
+            ws.cell(row=row, column=2, value=value).alignment = Alignment(horizontal='center')
+            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=2)
+
+        # Column headers
+        hr = 9
+        for ci, h in enumerate(["Matricule", "Nom du Fichier", "Statut", "Message Erreur"], 1):
+            c = ws.cell(row=hr, column=ci, value=h)
+            c.font = hdr_font
+            c.fill = hdr_fill
+            c.alignment = Alignment(horizontal='center', vertical='center')
+            c.border = bdr
+
+        ws.column_dimensions['A'].width = 18
+        ws.column_dimensions['B'].width = 55
+        ws.column_dimensions['C'].width = 14
+        ws.column_dimensions['D'].width = 60
+
+        row = hr + 1
+        for mat in sorted(employees.keys(), key=lambda x: (x.startswith("UNKNOWN"), x)):
+            emp = employees[mat]
+            start = row
+            for f in emp["files"]:
+                is_err = f["status"] == "Error"
+                fill = er_fill if is_err else ok_fill
+
+                ws.cell(row=row, column=1, value=emp["matricule"]).border = bdr
+                ws.cell(row=row, column=2, value=f["filename"]).border = bdr
+                sc = ws.cell(row=row, column=3, value=f["status"])
+                sc.font = err_font if is_err else ok_font
+                sc.border = bdr
+                ws.cell(row=row, column=4, value=f["error"] or "").border = bdr
+                for col in range(1, 5):
+                    ws.cell(row=row, column=col).fill = fill
+                row += 1
+
+            if row - start > 1:
+                ws.merge_cells(start_row=start, start_column=1, end_row=row - 1, end_column=1)
+
+            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=4)
+            sc = ws.cell(row=row, column=1,
+                         value=f"Total {emp['matricule']}: {emp['total']} fichier(s), {emp['success']} succès, {emp['failed']} échec(s)")
+            sc.font = Font(bold=True, italic=True, color="374151")
+            sc.border = bdr
+            row += 2
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+
+        filename = f"rapport_importation_{safe_id}.xlsx"
+        
+        # Ampiasaina HttpResponse mba ho azo antoka ny download ho an'ny Axios
+        response = HttpResponse(
+            buf.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    def _generate_csv(self, employees, total_expected, total_processed, total_failed, safe_id):
+        buf = io.StringIO()
+        writer = csv_module.writer(buf)
+
+        writer.writerow(["=== RAPPORT D'IMPORTATION & RÉCONCILIATION ==="])
+        writer.writerow([])
+        writer.writerow(["Indicateur", "Valeur"])
+        writer.writerow(["Total attendu (pages)", total_expected])
+        writer.writerow(["Total traités avec succès", total_processed])
+        writer.writerow(["Total en échec", total_failed])
+        writer.writerow(["Taux de succès", f"{total_processed / total_expected * 100:.1f}%" if total_expected > 0 else "N/A"])
+        writer.writerow([])
+        writer.writerow([])
+        writer.writerow(["Matricule", "Nom du Fichier", "Statut", "Message Erreur"])
+
+        for mat in sorted(employees.keys(), key=lambda x: (x.startswith("UNKNOWN"), x)):
+            emp = employees[mat]
+            for f in emp["files"]:
+                writer.writerow([emp["matricule"], f["filename"], f["status"], f["error"] or ""])
+            writer.writerow(["", "", "",
+                             f"Total {emp['matricule']}: {emp['total']} fichier(s), {emp['success']} succès, {emp['failed']} échec(s)"])
+            writer.writerow([])
+
+        filename = f"rapport_importation_{safe_id}.csv"
+        response = HttpResponse(buf.getvalue(), content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
